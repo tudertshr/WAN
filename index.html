@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Les technologies WAN, expliquées pas à pas (cours enrichi)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  color-scheme:light;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#e9eef5; --surface:#ffffff; --ink:#1b2a41; --muted:#5a6b85; --line:#d3dce9;
+  --banner:#1e4a86; --banner2:#2a5fa8; --banner-ink:#ffffff;
+  --phys:#b8731a; --phys-bg:#fbefd9; --l2:#0b7f82; --l2-bg:#d9f1f1; --l3:#2457c5; --l3-bg:#dde7fb;
+  --sv:#7a3fc2; --sv-bg:#ece1f8; --data:#4b5a73; --data-bg:#e6ebf2;
+  --ok:#157a4a; --ok-bg:#d9f2e4; --warn:#9a6200; --warn-bg:#fbebc8; --old:#a8392b; --old-bg:#f8dcd7;
+  --f-head:"Patrick Hand","Comic Sans MS","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px)}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.5}
+p{margin:0 0 .7em}
+:focus-visible{outline:3px solid #f2a93b;outline-offset:2px;border-radius:4px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88em;background:var(--data-bg);padding:.05em .35em;border-radius:4px}
+.page{max-width:1380px;margin:0 auto;padding:12px}
+
+/* banner */
+.banner{background:linear-gradient(100deg,var(--banner),var(--banner2));color:var(--banner-ink);border-radius:14px;padding:18px 22px;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.banner h1{font-family:var(--f-head);font-weight:400;font-size:clamp(1.9rem,4.6vw,3rem);line-height:1.05;margin:0 0 6px}
+.banner .sub{font-weight:600;opacity:.95}
+.note{background:#fff8e1;color:#33291a;border-radius:10px;padding:10px 14px;max-width:340px;font-size:.88rem;transform:rotate(-2deg);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+
+/* nav */
+.tabsnav{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);padding:calc(env(safe-area-inset-top,0px) + 6px) 0 6px;margin:0 -12px 8px;border-bottom:1px solid var(--line)}
+.tabsnav div{display:flex;gap:6px;overflow-x:auto;padding:0 12px;scrollbar-width:thin}
+.tabsnav a{white-space:nowrap;text-decoration:none;font-weight:700;font-size:.85rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:4px 11px;border-radius:999px}
+.tabsnav a:hover{background:var(--data-bg)}
+
+/* grid of cards */
+.poster{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.s2{grid-column:span 2}.s3{grid-column:span 3}.s4{grid-column:span 4}.s5{grid-column:span 5}.s6{grid-column:span 6}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
+@media(max-width:1100px){.s2,.s3,.s4,.s5,.s7,.s8{grid-column:span 6}}
+@media(max-width:700px){.poster>*{grid-column:span 12!important}}
+
+.card{--c:#2f7fd3;background:color-mix(in srgb,var(--c) 7%,var(--surface));border:2px solid color-mix(in srgb,var(--c) 75%,var(--surface));border-radius:12px;padding:12px 14px;min-width:0}
+.card>h2{font-family:var(--f-head);font-weight:400;font-size:1.45rem;line-height:1.15;color:color-mix(in srgb,var(--c) 78%,var(--ink));margin:0 0 .45em}
+.card h3{font-family:var(--f-head);font-weight:400;font-size:1.15rem;margin:.6em 0 .3em;color:color-mix(in srgb,var(--c) 70%,var(--ink))}
+.blue{--c:#2f7fd3}.sky{--c:#2f9fd6}.violet{--c:#8a63d2}.green{--c:#2fa65f}.orange{--c:#ee8f2d}.pink{--c:#d65a9e}.indigo{--c:#7b78d8}.teal{--c:#1fa39a}.red{--c:#d9534f}.amber{--c:#d4a017}
+.box{background:var(--surface);border:1px solid color-mix(in srgb,var(--c) 40%,var(--surface));border-radius:9px;padding:9px 11px;margin-bottom:8px}
+.sub{background:color-mix(in srgb,var(--c) 10%,var(--surface));border:2px solid color-mix(in srgb,var(--c) 55%,var(--surface));border-radius:10px;padding:9px 10px;min-width:0}
+.sub h3{text-align:center;margin:0 0 .3em;font-size:1.2rem}
+ul.l{margin:0 0 .5em;padding-left:1.1em}
+ul.l li{margin-bottom:.22em}
+.cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media(max-width:1500px) and (min-width:1101px){.cols3{grid-template-columns:1fr}}
+@media(max-width:560px){.cols3{grid-template-columns:1fr}}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:760px){.two{grid-template-columns:1fr}}
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+
+/* tables */
+.tb{overflow-x:auto;border-radius:9px}
+table{border-collapse:collapse;width:100%;font-size:.86rem;background:var(--surface)}
+th,td{padding:5px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+thead th{background:color-mix(in srgb,var(--c) 14%,var(--surface));font-weight:800}
+td:first-child{font-weight:800}
+tbody tr:last-child td{border-bottom:0}
+table.big{font-size:.92rem;min-width:760px}
+table.big th,table.big td{padding:9px 11px}
+.badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.78rem;font-weight:800;white-space:nowrap}
+.b-ok{background:var(--ok-bg);color:var(--ok)}.b-warn{background:var(--warn-bg);color:var(--warn)}.b-old{background:var(--old-bg);color:var(--old)}
+.lt{display:inline-block;padding:0 8px;border-radius:6px;font-weight:800;font-size:.82rem;white-space:nowrap}
+.lt-2{background:var(--l2-bg);color:var(--l2)}.lt-3{background:var(--l3-bg);color:var(--l3)}.lt-m{background:var(--sv-bg);color:var(--sv)}
+.foot{font-size:.8rem;color:var(--muted);margin-top:6px}
+
+/* encapsulation blocks */
+.encap{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.encap .arrow{font-weight:800;text-align:center;font-size:.8rem}
+.stk{display:flex;flex-direction:column;gap:3px;min-width:120px}
+.stk div,.pill{border-radius:6px;padding:4px 8px;text-align:center;font-weight:700;font-size:.82rem;border:1.5px solid}
+.g{background:#d9f2e0;border-color:#2fa65f;color:#14532d}.b{background:#dbe7fb;border-color:#2f7fd3;color:#163d73}.r{background:#fbdcd8;border-color:#d9534f;color:#7a1f1a}.v{background:#ebe1f8;border-color:#8a63d2;color:#3f1d7a}.s{background:#d9eff9;border-color:#2f9fd6;color:#0f4a68}
+
+
+.defs div{display:flex;gap:8px;margin-bottom:5px;font-size:.86rem}
+.defs b{flex:0 0 106px;border-radius:5px;padding:2px 8px;border:1.5px solid}
+.flow{display:flex;gap:4px;align-items:stretch;flex-wrap:wrap}
+.flow .pill{flex:1 1 70px;display:flex;align-items:center;justify-content:center}
+.chk{list-style:none;padding:0;margin:0}
+.chk li{padding-left:1.4em;position:relative;margin-bottom:.25em}
+.chk li::before{content:"\2713";position:absolute;left:0;color:var(--ok);font-weight:800}
+
+/* mini svgs */
+.mini svg{width:100%;height:auto;display:block}
+svg text{font-family:var(--f-body);fill:var(--ink)}
+svg .t-muted{fill:var(--muted)}
+svg .node{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+svg .cloud{fill:var(--data-bg);stroke:var(--muted);stroke-width:2;stroke-dasharray:6 4}
+svg .ln{stroke:var(--muted);stroke-width:3;fill:none}
+svg .tag-l2{fill:var(--l2-bg);stroke:var(--l2);stroke-width:1.5}
+svg .tag-l3{fill:var(--l3-bg);stroke:var(--l3);stroke-width:1.5}
+svg .tag-sv{fill:var(--sv-bg);stroke:var(--sv);stroke-width:1.5}
+svg .tag-old{fill:var(--old-bg);stroke:var(--old);stroke-width:1.5}
+.svgbox{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px}
+.svgbox svg{display:block;min-width:640px;width:100%;height:auto}
+
+/* OSI */
+.osi{display:flex;flex-direction:column;gap:3px}
+.osi ol{list-style:none;margin:0;padding:0;flex:1;display:flex;flex-direction:column;gap:3px}
+.osi .up{padding-right:104px}
+.osi .grp{display:flex;gap:8px;align-items:stretch}
+.osi li{border-radius:6px;padding:3px 10px;font-weight:700;font-size:.88rem;border:2px solid}
+.o7{background:#fbdcd8;border-color:#d9534f;color:#7a1f1a}.o6{background:#dbe7fb;border-color:#2f7fd3;color:#163d73}.o5{background:#d9eff9;border-color:#2f9fd6;color:#0f4a68}.o4{background:#d9f2e0;border-color:#2fa65f;color:#14532d}.o3{background:#e8f4cf;border-color:#7cb518;color:#3d5a05}.o2{background:#fde6c6;border-color:#ee8f2d;color:#7a4300}.o1{background:#fbd9ea;border-color:#d65a9e;color:#7a1f55}
+
+
+.osi .br{flex:0 0 96px;border-right:3px solid var(--c);border-top:3px solid var(--c);border-bottom:3px solid var(--c);border-radius:0 10px 10px 0;font-size:.74rem;line-height:1.2;display:flex;align-items:center;padding-left:6px;font-weight:700}
+
+/* filters / chips */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+.chip{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:5px 12px;border-radius:999px;font:inherit;font-weight:700;font-size:.86rem;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* protocol tabs */
+.ptabs{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 10px}
+.ptab{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 14px;border-radius:9px;font:inherit;font-weight:800;cursor:pointer}
+.ptab[aria-selected="true"]{background:var(--c);border-color:var(--c);color:#fff}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.panel h3.big{font-size:1.6rem;margin:0}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:10px 0}
+.meta div{background:var(--bg);border-radius:8px;padding:7px 10px;font-size:.88rem}
+.meta b{display:block;font-size:.76rem;color:var(--muted)}
+.frame{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+.fb{border-radius:7px;padding:6px 8px;text-align:center;border:2px solid;font-size:.8rem;line-height:1.25;min-width:58px}
+.fb b{display:block;font-size:.86rem}
+.fb small{display:block;color:var(--muted);font-size:.72rem}
+.fb.l2{background:var(--l2-bg);border-color:var(--l2)}.fb.l3{background:var(--l3-bg);border-color:var(--l3)}.fb.sv{background:var(--sv-bg);border-color:var(--sv)}.fb.data{background:var(--data-bg);border-color:var(--data)}
+.fb.grow{flex:1 1 130px}.fb.enc{border-style:dashed}
+.phases{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
+.phase{background:var(--l2-bg);border:2px solid var(--l2);border-radius:9px;padding:8px 10px;font-size:.86rem}
+.phase b{display:block}.phase.opt{border-style:dashed}
+.tip{border-left:5px solid var(--l3);background:var(--l3-bg);border-radius:0 9px 9px 0;padding:8px 12px;margin:8px 0;font-size:.9rem}
+.tip.w{border-color:var(--warn);background:var(--warn-bg)}
+pre.cmd{background:var(--bg);padding:10px 12px;border-radius:8px;overflow-x:auto;margin:0 0 8px;font-size:.85rem}
+
+/* journey */
+.stepper{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.stepper button{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:800;cursor:pointer}
+.stepper button[aria-current="step"]{background:var(--c);border-color:var(--c);color:#fff}
+.stepper button.done{border-color:var(--c);color:var(--c)}
+.btn{border:0;background:var(--ink);color:var(--bg);padding:8px 18px;border-radius:9px;font:inherit;font-weight:800;cursor:pointer}
+.btn.sec{background:var(--data-bg);color:var(--ink)}.btn:disabled{opacity:.4;cursor:default}
+.addr{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:8px}
+.addr div{background:var(--bg);border-radius:8px;padding:6px 10px;font-size:.86rem}
+.addr b{display:block;font-size:.74rem;color:var(--muted)}
+#marker{transition:transform .5s ease}
+
+/* qa */
+.qa{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px}
+.qa button{text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;cursor:pointer;min-height:84px}
+.qa .q{font-weight:800}.qa .a{display:none;margin-top:6px;color:var(--l2);font-weight:700}
+.qa button[aria-expanded="true"] .a{display:block}
+
+/* combos */
+.combo{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.combo .box h3{margin-top:0}
+.cl{padding:5px 10px;border-radius:7px;border:2px solid;margin-bottom:4px;font-weight:800;font-size:.84rem}
+.cl.ph{background:var(--phys-bg);border-color:var(--phys);color:var(--phys)}.cl.l2{background:var(--l2-bg);border-color:var(--l2);color:var(--l2)}.cl.l3{background:var(--l3-bg);border-color:var(--l3);color:var(--l3)}.cl.sv{background:var(--sv-bg);border-color:var(--sv);color:var(--sv)}
+
+/* retenir */
+.retenir{margin-top:12px;background:linear-gradient(100deg,var(--banner),var(--banner2));color:#fff;border-radius:14px;padding:16px 22px;position:relative}
+.retenir h2{font-family:var(--f-head);font-weight:400;font-size:1.8rem;margin:0 0 6px}
+.retenir .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px 26px}
+.retenir ul{list-style:none;margin:0;padding:0}
+.retenir li{padding-left:1.5em;position:relative;margin-bottom:.35em;font-size:.95rem}
+.retenir li::before{content:"\2713";position:absolute;left:0;color:#8ff0b5;font-weight:800}
+.courage{font-family:var(--f-head);font-size:1.4rem;text-align:right;transform:rotate(-3deg);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="banner">
+  <div>
+    <h1>Les technologies WAN, expliquées pas à pas</h1>
+    <div class="sub">WAN, PPP, HDLC, Frame Relay, ATM, Ethernet, MPLS, GRE, L2TP, IPsec : à quoi sert chacune, sur quel câble, entre quels équipements, et ce qui arrive à un paquet qui traverse le réseau d'un LAN à l'autre.</div>
+  </div>
+  <div class="note">Les protocoles ne sont pas des concurrents : ils s'empilent et se complètent, comme les étages d'un immeuble.</div>
+</header>
+
+<nav class="tabsnav" aria-label="Sections"><div>
+  <a href="#p1">1 Les 4 rôles</a><a href="#p2">2 Qu'est-ce qu'un WAN</a><a href="#p3">3 Couches OSI et TCP/IP</a><a href="#p4">4 Terminologie, équipements</a><a href="#p5">5 Types de services</a><a href="#p6">6 Tableau comparatif</a><a href="#p7">7 Tous les protocoles</a><a href="#p8">8 Qui parle à qui</a><a href="#p9">9 Fiches protocoles</a><a href="#p10">10 PPP en détail</a><a href="#p11">11 Encapsulation, tunnel</a><a href="#p12">12 Exemples d'encapsulation</a><a href="#p13">13 VPN</a><a href="#p14">14 IPsec en détail</a><a href="#p15">15 Parcours d'un paquet</a><a href="#p16">16 Chez l'opérateur</a><a href="#p17">17 Empilements</a><a href="#p18">18 Scénarios</a><a href="#p19">19 Combinaisons</a><a href="#p20">20 Configurations</a><a href="#c1">22 Adressage, SVC/PVC</a><a href="#c2">23 Débits, topologies</a><a href="#c3">24 Accès WAN</a><a href="#c4">25 HDLC</a><a href="#c5">26 PPP trame</a><a href="#c6">27 Frame Relay</a><a href="#c7">28 Corrections</a><a href="#p21">21 Révision</a>
+</div></nav>
+
+<main class="poster">
+
+<section class="card blue s12" id="p1">
+  <h2>1. Quatre rôles à ne pas confondre</h2>
+  <p>Le secret pour ne plus tout mélanger : ces technologies ne font pas toutes le même travail. Elles s'empilent, comme les étages d'un immeuble. Quand on se demande « quelle technologie choisir ? », on répond en réalité à quatre questions différentes.</p>
+  <div class="two">
+    <div class="box" role="img" aria-label="Pile : services, routage, liaison, support physique">
+      <div class="cl sv"><b>Services</b> : MPLS, IPsec, transporter et protéger</div>
+      <div class="cl l3"><b>Routage (couche 3)</b> : IP, choisir la route de bout en bout</div>
+      <div class="cl l2"><b>Liaison (couche 2)</b> : Ethernet, PPP, HDLC, Frame Relay, ATM, encadrer les données sur un lien</div>
+      <div class="cl ph"><b>Support physique (couche 1)</b> : cuivre, fibre, liaison série, radio</div>
+    </div>
+    <div class="box">
+      <p><b>Règle d'or :</b> un protocole ne dicte pas toujours le câble. PPP peut tourner sur une liaison série <em>ou</em> dans Ethernet (PPPoE). Le support dépend de l'interface et de l'infrastructure.</p>
+      <p style="margin:0"><b>À propos de la « couche 0 » :</b> le modèle OSI compte 7 couches, de 1 à 7. On parle parfois de « couche 0 » pour l'infrastructure physique (câbles, fibre, connecteurs), mais ce n'est pas une couche officielle. Ici, le support physique correspond à la couche 1.</p>
+    </div>
+  </div>
+  <div class="three" style="margin-top:10px">
+    <div class="box" style="border-color:var(--phys)"><h3>1. Le support</h3><p>Par où passent les signaux ? Câble cuivre, fibre optique, câble série, radio.</p><p class="foot">Exemples : UTP Cat6, fibre, V.35</p></div>
+    <div class="box" style="border-color:var(--l2)"><h3>2. La liaison</h3><p>Comment encadre-t-on les données sur <em>un seul lien</em> ? C'est le format de la trame.</p><p class="foot">Exemples : Ethernet, PPP, HDLC</p></div>
+    <div class="box" style="border-color:var(--l3)"><h3>3. Le routage</h3><p>Comment le paquet trouve-t-il son chemin <em>de bout en bout</em> ? Grâce aux adresses IP et aux tables de routage.</p><p class="foot">Exemples : IP, OSPF, BGP</p></div>
+    <div class="box" style="border-color:var(--sv)"><h3>4. Le service</h3><p>Quel service ajoute-t-on par-dessus ? Un transport géré par l'opérateur, ou une protection par chiffrement.</p><p class="foot">Exemples : MPLS, IPsec</p></div>
+  </div>
+</section>
+
+<section class="card green s12" id="p2">
+  <h2>2. Qu'est-ce qu'un réseau étendu (WAN) ?</h2>
+
+  <div class="two">
+    <div>
+      <p>Un <b>réseau étendu (WAN)</b> est un réseau de communication de données qui fonctionne <b>au-delà de la portée géographique d'un réseau local</b>. Il permet de transmettre des données sur de longues distances en utilisant les infrastructures fournies par un <b>opérateur</b> (téléphone, câble, satellite, fibre...).</p>
+      <p>Il relie des sites d'une même entreprise, des entreprises différentes, des services externes et des utilisateurs distants. Il transporte plusieurs types de trafic : voix, données, images vidéo.</p>
+    </div>
+    <div class="box"><h3 style="margin-top:0">Caractéristiques principales</h3><ul class="chk"><li>Connecte des équipements séparés par une grande zone géographique.</li><li>Utilise les services d'opérateurs (télécom, câble, satellite...).</li><li>Emploie des <b>connexions série</b> pour accéder à la bande passante.</li><li>Fonctionne sur les <b>3 couches inférieures</b> du modèle OSI : physique, liaison de données, réseau.</li></ul></div>
+  </div>
+  <h3>Exemple de réseau WAN</h3>
+  <div class="svgbox"><svg viewBox="0 0 900 250" role="img" aria-label="Deux sites reliés par le réseau WAN d'un opérateur, plus un utilisateur distant">
+    <rect class="node" x="30" y="70" width="110" height="70" rx="10"/><text x="85" y="100" text-anchor="middle" font-weight="800">Site A</text><text x="85" y="122" text-anchor="middle" font-size="12" class="t-muted">Entreprise</text>
+    <rect class="node" x="760" y="70" width="110" height="70" rx="10"/><text x="815" y="100" text-anchor="middle" font-weight="800">Site B</text><text x="815" y="122" text-anchor="middle" font-size="12" class="t-muted">Entreprise</text>
+    <ellipse class="cloud" cx="450" cy="105" rx="190" ry="75"/><text x="450" y="100" text-anchor="middle" font-weight="800" font-size="17">Réseau WAN</text><text x="450" y="122" text-anchor="middle" class="t-muted" font-size="13">(opérateur)</text>
+    <line class="ln" x1="140" y1="105" x2="260" y2="105"/><line class="ln" x1="640" y1="105" x2="760" y2="105"/>
+    <rect class="tag-l2" x="170" y="62" width="60" height="26" rx="6"/><text x="200" y="80" text-anchor="middle" font-size="12" font-weight="800">CPE</text>
+    <rect class="tag-l2" x="670" y="62" width="60" height="26" rx="6"/><text x="700" y="80" text-anchor="middle" font-size="12" font-weight="800">CPE</text>
+    <rect class="node" x="380" y="190" width="140" height="48" rx="10"/><text x="450" y="212" text-anchor="middle" font-weight="800">Utilisateur distant</text><text x="450" y="229" text-anchor="middle" class="t-muted" font-size="12">VPN / Internet</text>
+    <line class="ln" x1="450" y1="180" x2="450" y2="190" stroke-dasharray="6 4"/>
+  </svg></div>
+  <div class="three">
+    <div class="box"><h3 style="margin-top:0">Liaisons</h3><ul class="l"><li>Téléphone</li><li>Câble</li><li>Satellite</li><li>Fibre optique</li></ul></div>
+    <div class="box"><h3 style="margin-top:0">Technologies WAN</h3><ul class="l"><li>X.25</li><li>Frame Relay</li><li>ATM</li><li>MPLS</li></ul></div>
+    <div class="box"><h3 style="margin-top:0">Accès distant</h3><ul class="l"><li>VPN</li><li>Internet</li></ul></div>
+  </div>
+</section>
+
+<section class="card sky s12" id="p3">
+  <h2>3. Les couches : modèle OSI, TCP/IP et protocoles</h2>
+
+  <div class="two">
+    <div class="box"><h3 style="margin-top:0">Modèle OSI (7 couches)</h3>
+      <div class="osi"><div class="grp"><ol>
+        <li class="o7">7 · Application <span style="font-weight:600">HTTP, HTTPS, FTP, DNS, SSH</span></li>
+        <li class="o6">6 · Présentation <span style="font-weight:600">SSL/TLS, codage (non utilisé directement ici)</span></li>
+        <li class="o5">5 · Session <span style="font-weight:600">gestion des sessions</span></li>
+        <li class="o4">4 · Transport <span style="font-weight:600">TCP, UDP, SSL/TLS</span></li>
+        <li class="o3">3 · Réseau <span style="font-weight:600">IP, IPsec, ICMP, OSPF, GRE, MPLS</span></li>
+        <li class="o2">2 · Liaison de données <span style="font-weight:600">PPP, HDLC, Frame Relay, ATM, Ethernet, PPTP, L2TP</span></li>
+        <li class="o1">1 · Physique <span style="font-weight:600">câbles, Wi-Fi, fibre, radio</span></li>
+      </ol></div></div>
+      <p class="foot">Les réseaux WAN utilisent principalement les <b>3 couches inférieures</b> : physique, liaison de données, réseau.</p>
+    </div>
+    <div class="box"><h3 style="margin-top:0">Modèle TCP/IP (5 couches)</h3>
+      <div class="osi"><div class="grp"><ol>
+        <li class="o6">5 · Application <span style="font-weight:600">HTTP, DNS, SSH, FTP</span></li>
+        <li class="o4">4 · Transport <span style="font-weight:600">TCP, UDP</span></li>
+        <li class="o3">3 · Internet / Réseau <span style="font-weight:600">IP, ICMP, IPsec</span></li>
+        <li class="o2">2 · Accès réseau / Liaison <span style="font-weight:600">Ethernet, PPP, Wi-Fi</span></li>
+        <li class="o1">1 · Physique <span style="font-weight:600">câble, fibre, ondes</span></li>
+      </ol></div></div>
+      <p style="margin-top:8px"><b>En bref :</b> IPsec → couche 3 · PPP → couche 2.</p>
+      <div class="tip w"><b>Mais attention !</b> IPsec peut transporter ou protéger des choses qui viennent d'autres couches. PPP peut lui-même transporter différents protocoles de couche réseau. C'est là que la confusion commence.</div>
+    </div>
+  </div>
+  <h3>Comment les protocoles fonctionnent ensemble : l'encapsulation</h3>
+  <p>À chaque couche, le protocole ajoute un en-tête (et parfois une queue) pour assurer sa fonction : acheminement, contrôle, sécurité...</p>
+  <div class="encap">
+    <div class="stk"><div class="v">Données (ex : HTTP)</div><div class="g">Segment TCP (ou UDP)</div><div class="b">Paquet IP</div><div class="s" style="background:#fde6c6;border-color:#ee8f2d;color:#7a4300">Trame PPP (ou autre)</div><div class="r">Bits</div></div>
+    <div class="arrow">Exemple avec IPsec (couche réseau) →</div>
+    <div class="frame"><div class="fb l3"><b>En-tête IP</b></div><div class="fb sv"><b>En-tête ESP</b><small>(+ éventuellement AH)</small></div><div class="fb sv grow enc"><b>Données chiffrées</b><small>(ou protégées)</small></div><div class="fb sv"><b>Queue ESP</b><small>(+ ICV)</small></div></div>
+  </div>
+  <div class="tip"><b>Chaque protocole agit à un niveau précis du modèle réseau</b> et apporte un service spécifique : SSH (application), SSL/TLS (transport), IPsec (réseau), PPP, PPTP, L2TP (liaison).</div>
+</section>
+
+<section class="card indigo s12" id="p4">
+  <h2>4. Terminologie et équipements du réseau étendu</h2>
+
+  <div class="two">
+    <div><div class="tb"><table style="min-width:420px"><thead><tr><th>Terme</th><th>Définition</th></tr></thead><tbody><tr><td>CPE</td><td>Équipement d'abonné (routeur, modem...), appartient au client ou loué.</td></tr><tr><td>DCE / ETCD</td><td>Équipement de terminaison de circuit de données (modem, CSU/DSU...). Convertit les données en signal compatible avec l'opérateur.</td></tr><tr><td>DTE / ETTD</td><td>Équipement terminal de traitement de données (ordinateur, routeur, serveur...).</td></tr><tr><td>Point de démarcation</td><td>Sépare l'équipement du client de celui du fournisseur. Le client est responsable d'un côté, l'opérateur de l'autre : boîtier de raccordement chez le client.</td></tr><tr><td>Boucle locale</td><td>Câble téléphonique ou fibre reliant l'abonné au central (« last-mile »).</td></tr><tr><td>Central téléphonique (CO)</td><td>Installation du fournisseur reliée au réseau longue distance : commutation et transport.</td></tr></tbody></table></div></div>
+    <div><div class="tb"><table style="min-width:380px"><thead><tr><th>Équipement</th><th>Rôle</th></tr></thead><tbody><tr><td>Modem</td><td>Module un signal analogique ⇄ numérique.</td></tr><tr><td>CSU/DSU</td><td>Assure l'interface entre le réseau de l'opérateur et l'équipement du client.</td></tr><tr><td>Routeur</td><td>Routage des paquets entre réseaux.</td></tr><tr><td>Switch</td><td>Commutation locale (dans le site).</td></tr><tr><td>Multiplexeur (MUX)</td><td>Regroupe plusieurs flux sur une même liaison.</td></tr><tr><td>DTE / DCE</td><td>DTE : équipement terminal (ex : routeur). DCE : fournit l'interface de liaison (ex : CSU/DSU).</td></tr></tbody></table></div></div>
+  </div>
+  <h3>Interface abonné → opérateur</h3>
+  <div class="flow">
+    <div class="pill g">PC / CPE<br><small>équipement abonné</small></div><div class="pill s">Point de démarcation</div><div class="pill r" style="background:#fde6c6;border-color:#ee8f2d;color:#7a4300">Boucle locale<br><small>last-mile</small></div><div class="pill v">ETCD<br><small>modem / CSU-DSU</small></div><div class="pill b">Réseau WAN</div><div class="pill g">Central (CO)</div>
+  </div>
+  <p class="foot">Le point de démarcation sépare la responsabilité client / opérateur : très utile pour le dépannage, car il permet de savoir qui est responsable en cas de problème.</p>
+</section>
+
+<section class="card pink s12" id="p5">
+  <h2>5. Les types de services dans un réseau étendu</h2>
+
+  <p>On distingue deux types de services réseau : le service <b>sans connexion</b> (datagrammes), utilisé dans Internet, et le service <b>orienté connexion</b> (circuit virtuel), utilisé dans les réseaux publics comme X.25.</p>
+  <div class="two">
+    <div class="box"><h3 style="margin-top:0">Service sans connexion (datagrammes)</h3><ul class="l"><li>Chaque paquet est indépendant.</li><li>Il contient les adresses source et destination.</li><li>Le routage se fait pour chaque datagramme.</li><li>Les paquets peuvent suivre des chemins différents et arriver dans un ordre différent.</li><li>Risque de perte de paquets : le récepteur doit reconstituer l'ordre.</li></ul>
+      <div class="svgbox"><svg viewBox="0 0 520 120" role="img" aria-label="Plusieurs chemins entre source et destination"><rect class="node" x="10" y="45" width="70" height="30" rx="6"/><text x="45" y="65" text-anchor="middle" font-size="12" font-weight="800">Source</text><ellipse class="cloud" cx="260" cy="60" rx="90" ry="45"/><text x="260" y="58" text-anchor="middle" font-size="12" font-weight="800">Réseau</text><text x="260" y="74" text-anchor="middle" font-size="11" class="t-muted">plusieurs chemins</text><rect class="node" x="440" y="45" width="70" height="30" rx="6"/><text x="475" y="65" text-anchor="middle" font-size="12" font-weight="800">Destination</text><path d="M80 50 Q170 5 440 50" stroke="#d9534f" stroke-width="2" fill="none" stroke-dasharray="6 4"/><path d="M80 60 L440 60" stroke="#2fa65f" stroke-width="2" fill="none" stroke-dasharray="6 4"/><path d="M80 70 Q170 115 440 70" stroke="#2f7fd3" stroke-width="2" fill="none" stroke-dasharray="6 4"/></svg></div>
+      <p class="foot"><b>Avantage :</b> flexibilité et tolérance aux pannes. <b>Inconvénient :</b> pas de garantie de livraison.</p></div>
+    <div class="box"><h3 style="margin-top:0">Service orienté connexion (circuit virtuel)</h3><ul class="l"><li>Utilise un <b>circuit virtuel (CV)</b> : le réseau détermine le chemin.</li><li>Le circuit est virtuel (pas de réservation exclusive de la liaison).</li><li>Pas besoin d'adresse de destination dans chaque paquet.</li><li>Plusieurs circuits virtuels sur une même liaison : meilleure utilisation du support.</li><li>Identifié par un Numéro de Voie Logique (NVL).</li></ul>
+      <div class="svgbox"><svg viewBox="0 0 520 120" role="img" aria-label="Circuit virtuel unique"><rect class="node" x="10" y="45" width="70" height="30" rx="6"/><text x="45" y="65" text-anchor="middle" font-size="12" font-weight="800">Source</text><ellipse class="cloud" cx="260" cy="60" rx="90" ry="45"/><text x="260" y="58" text-anchor="middle" font-size="12" font-weight="800">Réseau</text><text x="260" y="74" text-anchor="middle" font-size="11" class="t-muted">chemin unique</text><rect class="node" x="440" y="45" width="70" height="30" rx="6"/><text x="475" y="65" text-anchor="middle" font-size="12" font-weight="800">Destination</text><path d="M80 60 L440 60" stroke="#2fa65f" stroke-width="3" fill="none"/><text x="260" y="20" text-anchor="middle" font-size="12" font-weight="800" style="fill:#2fa65f">Circuit virtuel</text></svg></div>
+      <p class="foot"><b>Avantage :</b> ordre garanti, plus efficace. <b>Inconvénient :</b> moins flexible, nécessite un établissement.</p></div>
+  </div>
+  <h3>Réseaux des opérateurs : technologies et services proposés</h3>
+  <div class="two">
+    <div><div class="tb"><table style="min-width:380px"><thead><tr><th>Technologie</th><th>Principe</th><th>Avantages / utilisation</th></tr></thead><tbody><tr><td>Frame Relay</td><td>Commutation de paquets</td><td>Simple, économique (ancien)</td></tr><tr><td>ATM</td><td>Cellules de 53 octets</td><td>Très haut débit, QoS</td></tr><tr><td>MPLS</td><td>Labels (niveau 2/3)</td><td>Routage plus rapide, VPN</td></tr><tr><td>X.25</td><td>Réseau orienté connexion</td><td>Fiable, mais ancien</td></tr></tbody></table></div></div>
+    <div class="box"><h3 style="margin-top:0">Services proposés</h3><ul class="l"><li>Liaison point à point (ex : T1/E1)</li><li>Accès Internet</li><li>Réseau privé virtuel (MPLS VPN)</li><li>Accès distant (via l'opérateur)</li><li>Services voix, données, vidéo</li></ul></div>
+  </div>
+</section>
+
+<section class="card amber s12" id="p6">
+  <h2>6. Tableau comparatif : couche, câble, communication, utilisation</h2>
+  <div class="chips" role="group" aria-label="Filtrer"><button class="chip" data-f="all" aria-pressed="true">Toutes</button><button class="chip" data-f="actif" aria-pressed="false">Encore très utilisées</button><button class="chip" data-f="old" aria-pressed="false">Résiduelles ou historiques</button></div>
+  <div class="tb"><table class="big">
+    <thead><tr><th>Technologie</th><th>Couche OSI</th><th>Support / câble</th><th>Type de communication</th><th>Meilleure utilisation</th><th>Aujourd'hui</th></tr></thead>
+    <tbody id="tbody"></tbody></table></div>
+  <div class="tip" style="margin-top:10px"><b>À retenir :</b> un protocole ne dicte pas toujours le câble. PPP peut tourner sur une liaison série ou dans Ethernet (PPPoE). Le support dépend de l'interface et de l'infrastructure.</div>
+</section>
+
+<section class="card amber s12" id="p7">
+  <h2>7. Tous les protocoles et leur rôle</h2>
+
+  <p>Quand on voit plusieurs sigles, on se demande souvent s'ils sont concurrents. En général <b>non</b> : chacun a un rôle précis, et ils se complètent.</p>
+  <div class="tb"><table style="min-width:760px"><thead><tr><th>Protocole</th><th>Couche</th><th>Rôle principal</th><th>Utilisation / remarques</th></tr></thead><tbody><tr><td>PPP</td><td><span class="lt lt-2">Liaison</span></td><td>Liaison point à point, encapsulation</td><td>Base de nombreuses autres technologies (LCP, NCP, PAP/CHAP, PPPoE, L2TP, SSTP)</td></tr><tr><td>LCP</td><td><span class="lt lt-2">PPP</span></td><td>Établir, configurer et tester la liaison</td><td>Avec NCP, PAP/CHAP</td></tr><tr><td>NCP</td><td><span class="lt lt-2">PPP</span></td><td>Configurer le protocole réseau (ex : IP)</td><td>Transporte des protocoles réseau</td></tr><tr><td>PAP / CHAP</td><td><span class="lt lt-2">PPP</span></td><td>Authentification</td><td>PAP simple (nom / mot de passe), CHAP plus sécurisé (challenge)</td></tr><tr><td>EAP</td><td><span class="lt lt-2">PPP</span></td><td>Cadre d'authentification extensible</td><td>Permet différentes méthodes d'authentification</td></tr><tr><td>PPPoE</td><td><span class="lt lt-2">Liaison + Ethernet</span></td><td>PPP sur Ethernet</td><td>Accès Internet (FAI)</td></tr><tr><td>HDLC</td><td><span class="lt lt-2">Liaison</span></td><td>Encapsulation série</td><td>Liaisons WAN, anciens réseaux</td></tr><tr><td>Frame Relay</td><td><span class="lt lt-2">Liaison / WAN</span></td><td>Commutation de paquets</td><td>WAN (obsolète mais encore utilisé)</td></tr><tr><td>ATM</td><td><span class="lt lt-2">Liaison / WAN</span></td><td>Transport par cellules</td><td>Haut débit, télécoms</td></tr><tr><td>MPLS</td><td><span class="lt lt-m">2 / 3</span></td><td>Acheminement par labels</td><td>Réseau opérateur, VPN, QoS : pas de chiffrement par défaut</td></tr><tr><td>GRE</td><td><span class="lt lt-3">Réseau</span></td><td>Tunnel IP (pas de chiffrement)</td><td>Souvent avec IPsec</td></tr><tr><td>IPsec</td><td><span class="lt lt-3">Réseau / Sécurité</span></td><td>Chiffrement + authentification</td><td>VPN site-à-site, accès distant</td></tr><tr><td>ESP</td><td><span class="lt lt-3">IPsec</span></td><td>Chiffrement + intégrité + anti-rejeu</td><td>Transport des données sécurisées</td></tr><tr><td>AH</td><td><span class="lt lt-3">IPsec</span></td><td>Authentification + intégrité</td><td>Sans chiffrement</td></tr><tr><td>IKE</td><td><span class="lt lt-3">IPsec</span></td><td>Négociation des paramètres et des clés</td><td>Établit la SA (Security Association)</td></tr><tr><td>PPTP</td><td><span class="lt lt-2">VPN</span></td><td>Tunnel PPP (via GRE)</td><td>Ancien, peu sécurisé</td></tr><tr><td>L2TP</td><td><span class="lt lt-2">VPN</span></td><td>Tunnel PPP</td><td>Souvent avec IPsec, plus sécurisé que PPTP</td></tr><tr><td>SSTP</td><td><span class="lt lt-2">VPN</span></td><td>PPP dans TLS</td><td>VPN sécurisé (port 443), basé sur SSL/TLS</td></tr><tr><td>SSL/TLS</td><td><span class="lt lt-3">Transport / Sécurité</span></td><td>Chiffrement des communications</td><td>VPN (ex : SSTP), HTTPS</td></tr><tr><td>SSH</td><td><span class="lt lt-m">Application</span></td><td>Accès distant sécurisé</td><td>Chiffre et authentifie les échanges</td></tr></tbody></table></div>
+</section>
+
+<section class="card sky s12" id="p8">
+  <h2>8. Qui parle à qui ? Où trouve-t-on chaque technologie</h2>
+  <div class="svgbox"><svg viewBox="0 0 900 470" role="img" aria-label="Schéma des liaisons entre sites, opérateurs et abonnés">
+    <ellipse class="cloud" cx="450" cy="190" rx="230" ry="110"/>
+    <text x="450" y="130" text-anchor="middle" font-weight="700" font-size="17">Réseaux des opérateurs</text>
+    <rect class="node" x="330" y="150" width="90" height="50" rx="10"/><text x="375" y="180" text-anchor="middle" font-size="14">Opérateur 1</text>
+    <rect class="node" x="480" y="150" width="90" height="50" rx="10"/><text x="525" y="180" text-anchor="middle" font-size="14">Opérateur 2</text>
+    <line class="ln" x1="420" y1="175" x2="480" y2="175"/>
+    <rect class="tag-sv" x="391" y="213" width="118" height="26" rx="8"/><text x="450" y="231" text-anchor="middle" font-size="13" font-weight="600">MPLS + BGP</text>
+    <text x="450" y="262" text-anchor="middle" font-size="12" class="t-muted">anciens cœurs : ATM</text>
+    <rect class="node" x="20" y="60" width="130" height="60" rx="10"/><text x="85" y="86" text-anchor="middle" font-size="14" font-weight="700">Site A</text><text x="85" y="106" text-anchor="middle" font-size="12" class="t-muted">Routeur d'entreprise</text>
+    <line class="ln" x1="150" y1="90" x2="330" y2="170"/>
+    <rect class="tag-l2" x="150" y="94" width="150" height="26" rx="8"/><text x="225" y="112" text-anchor="middle" font-size="13" font-weight="600">Ethernet WAN</text>
+    <rect class="node" x="750" y="60" width="130" height="60" rx="10"/><text x="815" y="86" text-anchor="middle" font-size="14" font-weight="700">Site B</text><text x="815" y="106" text-anchor="middle" font-size="12" class="t-muted">Routeur d'entreprise</text>
+    <line class="ln" x1="750" y1="90" x2="570" y2="170"/>
+    <rect class="tag-sv" x="600" y="94" width="150" height="26" rx="8"/><text x="675" y="112" text-anchor="middle" font-size="13" font-weight="600">Service VPN MPLS</text>
+    <path d="M85 60 C 85 5, 815 5, 815 60" fill="none" stroke="var(--sv)" stroke-width="3" stroke-dasharray="3 6"/>
+    <rect class="tag-sv" x="355" y="3" width="190" height="26" rx="8"/><text x="450" y="21" text-anchor="middle" font-size="13" font-weight="600">Tunnel IPsec via Internet</text>
+    <rect class="node" x="20" y="330" width="130" height="60" rx="10"/><text x="85" y="356" text-anchor="middle" font-size="14" font-weight="700">Agence</text><text x="85" y="376" text-anchor="middle" font-size="12" class="t-muted">Routeur</text>
+    <line class="ln" x1="150" y1="360" x2="345" y2="225" stroke-dasharray="8 6"/>
+    <rect class="tag-old" x="125" y="296" width="180" height="26" rx="8"/><text x="215" y="314" text-anchor="middle" font-size="13" font-weight="600">Frame Relay (historique)</text>
+    <rect class="node" x="750" y="330" width="130" height="60" rx="10"/><text x="815" y="356" text-anchor="middle" font-size="14" font-weight="700">Abonné</text><text x="815" y="376" text-anchor="middle" font-size="12" class="t-muted">Box / routeur</text>
+    <line class="ln" x1="750" y1="360" x2="545" y2="225"/>
+    <rect class="tag-l2" x="590" y="296" width="190" height="26" rx="8"/><text x="685" y="314" text-anchor="middle" font-size="13" font-weight="600">PPPoE (accès Internet)</text>
+    <rect class="node" x="330" y="380" width="100" height="50" rx="10"/><text x="380" y="410" text-anchor="middle" font-size="14" font-weight="700">Routeur 1</text>
+    <rect class="node" x="470" y="380" width="100" height="50" rx="10"/><text x="520" y="410" text-anchor="middle" font-size="14" font-weight="700">Routeur 2</text>
+    <line class="ln" x1="430" y1="405" x2="470" y2="405"/>
+    <rect class="tag-l2" x="365" y="437" width="170" height="26" rx="8"/><text x="450" y="455" text-anchor="middle" font-size="13" font-weight="600">Liaison série : HDLC ou PPP</text>
+  </svg></div>
+  <div class="two">
+    <div class="box"><b>Client ↔ opérateur :</b> Ethernet WAN ou service MPLS pour relier des sites, PPPoE pour l'accès Internet, Frame Relay autrefois.</div>
+    <div class="box"><b>Routeur ↔ routeur :</b> HDLC ou PPP en série. <b>Opérateur ↔ opérateur :</b> MPLS et BGP. <b>Site ↔ site via Internet :</b> IPsec. Ce sont des exemples typiques, pas des règles absolues.</div>
+  </div>
+</section>
+
+<section class="card violet s12" id="p9">
+  <h2>9. Fiches protocoles : trame, fonctionnement, utilisation</h2>
+  <div class="ptabs" role="tablist" id="tabs" aria-label="Protocoles"></div>
+  <div class="panel" id="panel" role="tabpanel" tabindex="0"></div>
+</section>
+
+<section class="card violet s12" id="p10">
+  <h2>10. PPP : ce n'est pas « un seul protocole »</h2>
+
+  <p><b>PPP = Point-to-Point Protocol.</b> Il sert à établir une communication point à point (par exemple entre un PC et un routeur). PPP est la <b>liaison</b> entre les deux.</p>
+  <div class="two">
+    <div class="box"><h3 style="margin-top:0">La « maison » PPP</h3>
+      <div class="cl l3" style="background:#fbdcd8;border-color:#d9534f;color:#7a1f1a"><b>LCP</b> → négociation de la liaison</div>
+      <div class="cl" style="background:#fbebc8;border-color:#d4a017;color:#6b4a00"><b>Authentification</b> → PAP / CHAP / EAP</div>
+      <div class="cl l3"><b>NCP</b> → configuration du protocole réseau</div>
+      <div class="cl sv"><b>IP</b> → données réseau transportées</div>
+      <div class="tip" style="margin-top:8px">LCP, PAP, CHAP, EAP et NCP ne sont pas des concurrents de PPP : ils font partie de l'écosystème PPP.</div>
+    </div>
+    <div class="box"><h3 style="margin-top:0">LCP : « est-ce qu'on peut commencer à communiquer ? »</h3>
+      <p><b>LCP = Link Control Protocol.</b> Il établit, configure, teste et termine la liaison PPP, et négocie certains paramètres.</p>
+      <div class="defs"><div><b class="g">A → B</b><span>« Bonjour »</span></div><div><b class="b">B → A</b><span>« On utilise ça ? »</span></div><div><b class="g">A → B</b><span>« D'accord »</span></div></div>
+      <div class="badge b-ok">Liaison PPP OK</div>
+    </div>
+  </div>
+  <h3>Ensuite : l'authentification (« OK, mais tu es qui ? »)</h3>
+  <div class="three">
+    <div class="box" style="border-color:var(--old)"><h3 style="margin-top:0">PAP</h3><p class="foot">Password Authentication Protocol</p><ul class="l"><li>Envoie directement le nom d'utilisateur et le mot de passe.</li><li><b>Faible :</b> les informations sont envoyées sans protection moderne.</li></ul></div>
+    <div class="box" style="border-color:var(--l3)"><h3 style="margin-top:0">CHAP</h3><p class="foot">Challenge Handshake Authentication Protocol</p><ul class="l"><li>Le serveur envoie un challenge (défi), le client répond avec une réponse calculée.</li><li><b>Plus sécurisé que PAP</b> : le mot de passe ne circule pas.</li></ul></div>
+    <div class="box" style="border-color:var(--sv)"><h3 style="margin-top:0">EAP</h3><p class="foot">Extensible Authentication Protocol</p><ul class="l"><li>Cadre d'authentification extensible.</li><li>Peut permettre différentes méthodes d'authentification.</li></ul></div>
+  </div>
+  <div class="two">
+    <div class="tip w"><b>Ne pense pas :</b> PPP, PAP, CHAP, EAP comme s'ils étaient quatre versions de PPP.</div>
+    <div class="tip" style="border-color:var(--ok);background:var(--ok-bg)"><b>Pense plutôt :</b> PPP contient LCP, l'authentification (PAP / CHAP / EAP) et NCP.</div>
+  </div>
+</section>
+
+<section class="card teal s12" id="p11">
+  <h2>11. Encapsulation, tunnel, chiffrement : ne pas confondre</h2>
+
+  <p><b>L'encapsulation</b> consiste à placer un protocole dans un autre pour le transporter sur un réseau.</p>
+  <div class="three">
+    <div class="box" style="border-color:#8a63d2"><h3 style="margin-top:0">Encapsulation</h3><p>Comment transporter un protocole dans un autre.</p><p class="foot">Ex : PPP dans Ethernet (PPPoE).</p></div>
+    <div class="box" style="border-color:#2fa65f"><h3 style="margin-top:0">Tunnel</h3><p>Créer un chemin logique entre deux extrémités.</p><p class="foot">Ex : GRE, L2TP, PPTP, SSTP.</p></div>
+    <div class="box" style="border-color:#ee8f2d"><h3 style="margin-top:0">Chiffrement</h3><p>Rendre les données illisibles aux intermédiaires.</p><p class="foot">Ex : IPsec/ESP, TLS.</p></div>
+  </div>
+  <div class="tip"><b>Exemples simples :</b> GRE = tunnel (pas de chiffrement) · IPsec/ESP = chiffrement (tunnel possible) · MPLS = labels (pas de chiffrement par défaut).</div>
+  <h3>Les 3 grandes fonctions</h3>
+  <div class="three">
+    <div class="box" style="border-color:var(--l3)"><h3 style="margin-top:0">1. Tunneling / encapsulation</h3><p>Comment faire passer mes données dans un tunnel ?</p><ul class="l"><li>GRE</li><li>PPTP</li><li>L2TP</li></ul><p class="foot">Ne chiffre pas (= encapsule).</p></div>
+    <div class="box" style="border-color:var(--ok)"><h3 style="margin-top:0">2. Sécurité</h3><p>Comment protéger mes données ?</p><ul class="l"><li><b>IPsec</b> (surtout ESP)</li></ul><p class="foot">Confidentialité + intégrité + authentification + protection contre le rejeu.</p></div>
+    <div class="box" style="border-color:var(--sv)"><h3 style="margin-top:0">3. Négociation</h3><p>Comment les équipements se mettent-ils d'accord ?</p><ul class="l"><li><b>IKE</b></li></ul><p class="foot">Négocie les paramètres de sécurité et établit les clés.</p></div>
+  </div>
+  <div class="flow" style="margin-top:8px"><div class="pill v"><b>IKE</b> prépare</div><div class="pill r"><b>IPsec / ESP</b> protège</div><div class="pill g"><b>GRE / L2TP / PPTP</b> crée le tunnel</div></div>
+</section>
+
+<section class="card blue s12" id="p12">
+  <h2>12. Exemples d'encapsulation (ordre des en-têtes)</h2>
+
+  <p>Les nombres entre parenthèses sont les tailles d'en-tête en octets. Les blocs en pointillés sont chiffrés ou protégés.</p>
+  <div class="two">
+    <div class="box"><h3 style="margin-top:0">PPP + LCP + NCP + CHAP (liaison point à point)</h3><div class="frame"><div class="fb l2"><b>PPP</b></div><div class="fb l2"><b>LCP / NCP</b></div><div class="fb l2"><b>PAP / CHAP</b></div><div class="fb data grow"><b>Données (IP)</b></div></div><p class="foot">Liaison PPP + configuration + authentification.</p></div>
+    <div class="box"><h3 style="margin-top:0">PPPoE (PPP sur Ethernet)</h3><div class="frame"><div class="fb l2"><b>Ethernet</b><small>(14)</small></div><div class="fb l2"><b>PPPoE</b><small>(6)</small></div><div class="fb l2"><b>PPP</b><small>(2)</small></div><div class="fb l3"><b>IP</b></div><div class="fb data grow"><b>Données</b></div></div><p class="foot">PPP encapsulé dans PPPoE, lui-même dans Ethernet. Accès Internet (FAI).</p></div>
+    <div class="box"><h3 style="margin-top:0">GRE : tunnel simple (niveau 3)</h3><div class="frame"><div class="fb l3"><b>Nouvel IP</b><small>source R1 → R2</small></div><div class="fb data"><b>GRE</b><small>(4)</small></div><div class="fb l3"><b>IP</b><small>source / destination</small></div><div class="fb data"><b>TCP/UDP</b></div><div class="fb data grow"><b>Données</b></div></div><p class="foot">GRE encapsule un paquet IP dans un autre paquet IP. Tunnel, mais pas de chiffrement.</p></div>
+    <div class="box"><h3 style="margin-top:0">PPTP : tunnel + authentification PPP (niveau 2)</h3><div class="frame"><div class="fb l3"><b>Nouvel IP</b></div><div class="fb data"><b>GRE</b></div><div class="fb l2"><b>PPP</b></div><div class="fb l3"><b>IP</b></div><div class="fb data"><b>TCP/UDP</b></div><div class="fb data grow"><b>Données</b></div></div><p class="foot">PPTP utilise GRE pour le tunnel et PPP pour l'authentification. Pas de chiffrement fort (ancien).</p></div>
+    <div class="box"><h3 style="margin-top:0">L2TP : tunnel + PPP (niveau 2)</h3><div class="frame"><div class="fb l3"><b>Nouvel IP</b></div><div class="fb data"><b>UDP</b></div><div class="fb data"><b>L2TP</b></div><div class="fb l2"><b>PPP</b></div><div class="fb l3"><b>IP</b></div><div class="fb data"><b>TCP/UDP</b></div><div class="fb data grow"><b>Données</b></div></div><p class="foot">L2TP encapsule PPP dans un tunnel, souvent avec IPsec pour la sécurité.</p></div>
+    <div class="box"><h3 style="margin-top:0">IPsec ESP : sécurité (niveau 3)</h3><div class="frame"><div class="fb l3"><b>Nouvel IP</b></div><div class="fb sv"><b>ESP</b><small>chiffrement + intégrité</small></div><div class="fb l3 enc"><b>IP</b></div><div class="fb data enc"><b>TCP/UDP</b></div><div class="fb data grow enc"><b>Données</b></div><div class="fb sv"><b>Queue ESP</b></div></div><p class="foot">IPsec ajoute une protection au paquet IP (ESP ou AH). Chiffrement + intégrité + anti-rejeu.</p></div>
+    <div class="box"><h3 style="margin-top:0">L2TP + IPsec (VPN distant)</h3><div class="frame"><div class="fb l2"><b>Ethernet</b><small>(14)</small></div><div class="fb l3"><b>IP</b><small>(20)</small></div><div class="fb data"><b>UDP</b><small>(8)</small></div><div class="fb data"><b>L2TP</b><small>(4)</small></div><div class="fb sv"><b>IPsec ESP</b></div><div class="fb l3 enc"><b>IP</b><small>(20)</small></div><div class="fb data grow enc"><b>Données</b></div></div><p class="foot">L2TP = tunnel · IPsec = sécurité.</p></div>
+    <div class="box"><h3 style="margin-top:0">GRE + IPsec (site-à-site)</h3><div class="frame"><div class="fb l2"><b>Ethernet</b><small>(14)</small></div><div class="fb l3"><b>IP</b><small>(20)</small></div><div class="fb data"><b>GRE</b><small>(4)</small></div><div class="fb l3"><b>IP</b><small>(20)</small></div><div class="fb sv"><b>ESP</b><small>IPsec</small></div><div class="fb l3 enc"><b>IP</b><small>(20)</small></div><div class="fb data grow enc"><b>Données</b></div></div><p class="foot">Tunnel + chiffrement.</p></div>
+    <div class="box"><h3 style="margin-top:0">SSTP (VPN distant)</h3><div class="frame"><div class="fb l2"><b>Ethernet</b></div><div class="fb l3"><b>IP</b></div><div class="fb data"><b>TCP (443)</b></div><div class="fb sv"><b>SSL/TLS</b></div><div class="fb l2 enc"><b>PPP</b></div><div class="fb l3 enc"><b>IP</b></div><div class="fb data grow enc"><b>Données</b></div></div><p class="foot">PPP dans un tunnel TLS (port 443).</p></div>
+    <div class="box"><h3 style="margin-top:0">MPLS (WAN opérateur)</h3><div class="frame"><div class="fb l2"><b>Ethernet</b><small>(14)</small></div><div class="fb sv"><b>MPLS (label)</b><small>(4)</small></div><div class="fb l3"><b>IP</b><small>(20)</small></div><div class="fb data grow"><b>Données</b></div></div><p class="foot">MPLS utilise des labels pour acheminer le trafic (pas de chiffrement par défaut).</p></div>
+  </div>
+  <div class="tip"><b>Rappel :</b> Frame Relay = trames, ATM = cellules, MPLS = labels.</div>
+</section>
+
+<section class="card orange s12" id="p13">
+  <h2>13. Les VPN : besoins, types et protocoles</h2>
+
+  <p>Déployer un système de sécurité VPN répond à 4 besoins :</p>
+  <div class="three">
+    <div class="box"><b>Protéger les sites</b><p class="foot">Les réseaux d'entreprise, les agences...</p></div>
+    <div class="box"><b>Protéger les communications inter-sites</b><p class="foot">Entre deux sites distants.</p></div>
+    <div class="box"><b>Autoriser les accès distants aux services extranet</b><p class="foot">Partenaire, client, fournisseur.</p></div>
+    <div class="box"><b>Autoriser les accès licites distants aux services intranet</b><p class="foot">Télétravail, employés.</p></div>
+  </div>
+  <h3>Les types de VPN</h3>
+  <div class="three">
+    <div class="box" style="border-color:var(--l3)"><h3 style="margin-top:0">VPN accès distant</h3><ul class="l"><li>Utilisateur ↔ réseau de l'entreprise.</li><li>Protocoles : L2TP/IPsec, SSTP, PPTP (ancien).</li><li>Télétravail, nomade.</li></ul></div>
+    <div class="box" style="border-color:var(--ok)"><h3 style="margin-top:0">VPN site-à-site</h3><ul class="l"><li>Réseau ↔ réseau.</li><li>Protocoles : IPsec (IKE/ESP), GRE + IPsec, MPLS.</li><li>Relier plusieurs sites d'une même entreprise.</li></ul></div>
+    <div class="box" style="border-color:var(--old)"><h3 style="margin-top:0">VPN SSL/TLS</h3><ul class="l"><li>Accès via navigateur.</li><li>Protocole : SSL/TLS.</li><li>Accès aux applications internes.</li></ul></div>
+  </div>
+  <h3>À quel niveau du modèle réseau chaque VPN agit-il ?</h3>
+  <div class="two"><div><div class="tb"><table style="min-width:300px"><thead><tr><th>Niveau</th><th>Exemples de protocoles</th></tr></thead><tbody><tr><td>Niveau 2 (liaison)</td><td>PPTP, L2TP</td></tr><tr><td>Niveau 3 (réseau)</td><td>IPsec</td></tr><tr><td>Niveau 4 (transport)</td><td>SSL / TLS</td></tr><tr><td>Applicatif</td><td>SSH</td></tr></tbody></table></div></div>
+  <div class="tip"><b>On distingue donc des VPN de couche 2 et des VPN de couche 3.</b> Les 3 technologies VPN les plus répandues : GRE, MPLS et IPsec.</div></div>
+  <h3>Vue d'ensemble : GRE, MPLS, IPsec</h3>
+  <div class="tb"><table style="min-width:640px"><thead><tr><th>Protocole</th><th>Origine</th><th>Rôle principal</th></tr></thead><tbody><tr><td><b>GRE</b><br>Generic Routing Encapsulation</td><td>Développé initialement par Cisco</td><td>Encapsule des paquets de toute sorte dans des paquets de transport (ex : trames PPP dans des paquets IP).</td></tr><tr><td><b>MPLS</b><br>Multi Protocol Label Switching</td><td>Mis au point par Cisco, standardisé ensuite par l'IETF</td><td>Commutation par étiquettes ; largement déployé par les fournisseurs de services pour offrir des VPN aux clients.</td></tr><tr><td><b>IPsec</b><br>IP Security Protocol</td><td>Standard IETF</td><td>Offre intégrité, confidentialité et authentification au protocole IP, de façon transparente pour l'utilisateur.</td></tr></tbody></table></div>
+  <h3>PPTP, L2TP et autres protocoles VPN</h3>
+  <div class="two">
+    <div class="box"><h3 style="margin-top:0">PPTP (Point to Point Tunneling Protocol)</h3><ul class="l"><li>Niveau 2. Encapsule des trames PPP dans des datagrammes IP.</li><li>Permet le cryptage (MPPE).</li><li>VPN ancien, peu sécurisé.</li></ul></div>
+    <div class="box"><h3 style="margin-top:0">L2TP (Layer 2 Tunneling Protocol)</h3><ul class="l"><li>Niveau 2. Souvent utilisé avec IPsec.</li><li>Tunnel PPP, plus sécurisé que PPTP.</li></ul></div>
+    <div class="box"><h3 style="margin-top:0">SSL / TLS</h3><ul class="l"><li>Niveau 4 (transport).</li><li>Crée un tunnel sécurisé (ex : HTTPS, VPN web).</li></ul></div>
+    <div class="box"><h3 style="margin-top:0">SSH</h3><ul class="l"><li>Niveau applicatif.</li><li>Accès distant sécurisé : chiffre et authentifie les échanges.</li></ul></div>
+  </div>
+  <div class="tip w"><b>GRE seul n'est pas sécurisé :</b> on l'utilise souvent avec IPsec. MPLS est une technologie des opérateurs (VPN par étiquettes), pas un VPN classique.</div>
+</section>
+
+<section class="card red s12" id="p14">
+  <h2>14. IPsec en détail : services, blocs, ESP, IKE</h2>
+
+  <p><b>IPsec</b> = ensemble de mécanismes de sécurité au niveau IP. Il assure la confidentialité, l'intégrité et l'authentification du trafic IP.</p>
+  <div class="three">
+    <div class="box" style="border-color:var(--ok)"><h3 style="margin-top:0">Confidentialité</h3><p>Assurée grâce au cryptage (chiffrement).</p></div>
+    <div class="box" style="border-color:var(--sv)"><h3 style="margin-top:0">Intégrité</h3><p>Garantit que les données arrivent inchangées à destination, via un algorithme de hachage (MD5, SHA).</p></div>
+    <div class="box" style="border-color:var(--l3)"><h3 style="margin-top:0">Authentification</h3><p>Utilise des mots de passe, des clés pré-partagées et des certificats numériques.</p></div>
+    <div class="box" style="border-color:var(--warn)"><h3 style="margin-top:0">Protection contre le rejeu</h3><p>Évite qu'un attaquant réutilise un ancien paquet.</p></div>
+  </div>
+  <h3>Les 5 blocs constitutifs de l'architecture IPsec</h3>
+  <div class="tb"><table style="min-width:560px"><thead><tr><th>Bloc</th><th>Rôle</th><th>Choix possibles</th></tr></thead><tbody><tr><td>1. Protocole IPsec</td><td>Format d'encapsulation</td><td>AH, ESP, ou ESP + AH</td></tr><tr><td>2. Confidentialité</td><td>Algorithme de chiffrement</td><td>DES, 3DES, AES, SEAL</td></tr><tr><td>3. Intégrité</td><td>Algorithme de hachage</td><td>MD5 ou SHA</td></tr><tr><td>4. Clé secrète partagée</td><td>Comment elle est établie</td><td>Pré-partagée (PSK) ou signée numériquement (RSA)</td></tr><tr><td>5. Diffie-Hellman</td><td>Groupe d'échange de clés</td><td>DH1, DH2, DH5...</td></tr></tbody></table></div>
+  <div class="tip"><b>À retenir :</b> IPsec fournit le cadre ; c'est l'administrateur qui choisit les algorithmes utilisés à l'intérieur de ce cadre pour chaque bloc. Cette indépendance permet de mieux supporter les nouveaux algorithmes.</div>
+  <h3>Les deux composants : ESP et IKE</h3>
+  <div class="two">
+    <div class="box" style="border-color:var(--old)"><h3 style="margin-top:0">ESP : plus que du chiffrement !</h3><p><b>Encapsulating Security Payload</b>, le plus utilisé par IPsec. Il chiffre les données et protège contre les attaques de rejeu. Utilise DES, 3DES ou AES.</p><ul class="chk"><li><b>Confidentialité</b> → chiffrement des données</li><li><b>Intégrité</b> → protège contre toute modification</li><li><b>Protection contre le rejeu</b> → évite qu'un attaquant réutilise un ancien paquet</li></ul><div class="frame"><div class="fb l3"><b>En-tête IP</b></div><div class="fb sv"><b>En-tête ESP</b></div><div class="fb sv grow enc"><b>Données chiffrées</b></div><div class="fb sv"><b>Queue ESP</b><small>(+ ICV)</small></div></div><p class="foot">ESP est un protocole complet : il chiffre, authentifie et protège contre le rejeu. <b>AH</b>, lui, authentifie et garantit l'intégrité, sans chiffrer.</p></div>
+    <div class="box" style="border-color:var(--sv)"><h3 style="margin-top:0">IKE : négociation (Internet Key Exchange)</h3><p>Permet de négocier les paramètres de sécurité et de créer les clés de manière sécurisée sur un réseau non sécurisé. IKE établit une connexion sécurisée pour :</p><ol class="l"><li>Négocier les algorithmes (chiffrement, hachage, groupe DH).</li><li>Échanger les clés.</li><li>Créer les SA (Security Associations).</li></ol><div class="flow"><div class="pill g">Client</div><div class="pill v">IKE<br><small>UDP 500</small></div><div class="pill g">Passerelle</div></div><p class="foot">Résultat : SA IPsec + clés. Peut utiliser une clé pré-partagée (PSK) ou des certificats (RSA).</p></div>
+  </div>
+  <h3>Exemple : tout fonctionne ensemble (VPN IPsec)</h3>
+  <div class="flow"><div class="pill g">Client distant<br><small>avec IPsec</small></div><div class="pill s">Internet<br><small>réseau non sécurisé</small></div><div class="pill v">IKE négocie + clés<br>ESP chiffre + intégrité + anti-rejeu</div><div class="pill r">Passerelle VPN<br><small>IPsec</small></div><div class="pill b">Réseau de l'entreprise<br><small>intranet / sites distants</small></div></div>
+  <p class="foot">Pour un accès distant sécurisé : (1) le client se connecte en PPTP ou L2TP ; (2) le tunnel est créé (GRE/L2TP) ; (3) IPsec (ESP) chiffre et protège les données ; (4) IKE négocie les clés ; (5) les données arrivent au réseau interne.</p>
+</section>
+
+<section class="card green s12" id="p15">
+  <h2>15. Le voyage d'un paquet : du LAN A au LAN B</h2>
+  <p>PC A (192.168.1.10) envoie des données à PC B (192.168.2.20). Avance étape par étape, et choisis la technologie du WAN.</p>
+  <div class="chips" role="group" aria-label="Technologie du WAN"><button class="chip" data-m="ppp" aria-pressed="true">WAN en PPP</button><button class="chip" data-m="eth" aria-pressed="false">WAN en Ethernet</button><button class="chip" data-m="mpls" aria-pressed="false">Opérateur MPLS</button><button class="chip" data-m="ipsec" aria-pressed="false">VPN IPsec</button></div>
+  <div class="svgbox"><svg viewBox="0 0 800 190" role="img" aria-label="Topologie du trajet">
+    <line class="ln" x1="50" y1="90" x2="750" y2="90"/>
+    <ellipse class="cloud" cx="400" cy="90" rx="110" ry="58"/>
+    <text x="400" y="86" text-anchor="middle" font-size="14" font-weight="700">Réseau WAN</text><text x="400" y="106" text-anchor="middle" font-size="12" class="t-muted">opérateur</text>
+    <rect class="node" x="20" y="65" width="60" height="50" rx="8"/><text x="50" y="95" text-anchor="middle" font-size="13" font-weight="700">PC A</text>
+    <rect class="node" x="110" y="70" width="50" height="40" rx="8"/><text x="135" y="95" text-anchor="middle" font-size="12">Switch</text>
+    <rect class="node" x="190" y="65" width="70" height="50" rx="8"/><text x="225" y="95" text-anchor="middle" font-size="13" font-weight="700">R1</text>
+    <rect class="node" x="540" y="65" width="70" height="50" rx="8"/><text x="575" y="95" text-anchor="middle" font-size="13" font-weight="700">R2</text>
+    <rect class="node" x="640" y="70" width="50" height="40" rx="8"/><text x="665" y="95" text-anchor="middle" font-size="12">Switch</text>
+    <rect class="node" x="720" y="65" width="60" height="50" rx="8"/><text x="750" y="95" text-anchor="middle" font-size="13" font-weight="700">PC B</text>
+    <text x="135" y="145" text-anchor="middle" font-size="12" class="t-muted">LAN A</text><text x="665" y="145" text-anchor="middle" font-size="12" class="t-muted">LAN B</text>
+    <g id="marker"><circle r="13" cx="0" cy="0" fill="var(--c,#2fa65f)" style="fill:#2fa65f" stroke="var(--surface)" stroke-width="3"/><text x="0" y="5" text-anchor="middle" font-size="13" font-weight="800" style="fill:#fff" id="mk">1</text></g>
+  </svg></div>
+  <div class="stepper" id="stepper" role="group" aria-label="Étapes"></div>
+  <div class="box" id="explain" aria-live="polite"></div>
+  <div style="display:flex;gap:8px;margin:8px 0 12px"><button class="btn sec" id="prev">Étape précédente</button><button class="btn" id="next">Étape suivante</button></div>
+  <div class="two">
+    <div class="tb"><table>
+      <thead><tr><th>Élément</th><th>Pendant le trajet</th></tr></thead>
+      <tbody>
+        <tr><td>Adresses IP source / destination</td><td>Identiques de bout en bout (sauf NAT)</td></tr>
+        <tr><td>Adresses MAC</td><td>Changent à chaque saut Ethernet ; absentes en PPP / HDLC</td></tr>
+        <tr><td>En-tête de couche 2</td><td>Remplacé à chaque lien : Ethernet, PPP, Ethernet...</td></tr>
+        <tr><td>TTL</td><td>Diminue de 1 à chaque routeur</td></tr>
+        <tr><td>FCS</td><td>Recalculé à chaque lien</td></tr>
+      </tbody></table></div>
+    <div class="tip"><b>Pourquoi pas de MAC en PPP ?</b> Sur une liaison point à point, il n'y a qu'un seul voisin possible, à l'autre bout. Le champ Adresse vaut simplement 0xFF.<br><br><b>Protocoles qui interviennent :</b> ARP (MAC du saut suivant), un protocole de routage (OSPF, EIGRP, BGP), PPP (LCP, PAP/CHAP, IPCP) sur le WAN, éventuellement MPLS (LDP) chez l'opérateur, et IPsec pour chiffrer.</div>
+  </div>
+  <h3>Ce qui change, ce qui reste</h3>
+  <div class="tb"><table style="min-width:520px">
+    <thead><tr><th>Élément</th><th>Évolution pendant le trajet</th></tr></thead>
+    <tbody>
+      <tr><td>Adresses IP source et destination</td><td>Restent <b>identiques</b> de bout en bout (sauf si du NAT intervient)</td></tr>
+      <tr><td>Adresses MAC</td><td><b>Changent à chaque saut Ethernet</b>. Absentes sur une liaison PPP ou HDLC</td></tr>
+      <tr><td>En-tête de couche 2</td><td><b>Remplacé à chaque lien</b> : Ethernet, puis PPP, puis Ethernet...</td></tr>
+      <tr><td>TTL</td><td><b>Diminue de 1</b> à chaque routeur traversé</td></tr>
+      <tr><td>FCS (contrôle d'erreurs)</td><td><b>Recalculé</b> à chaque lien, car la trame est reconstruite</td></tr>
+    </tbody></table></div>
+  <div class="tip"><b>Pourquoi pas de MAC en PPP ?</b> Sur une liaison point à point, il n'y a qu'un seul voisin possible, à l'autre bout. Inutile de l'identifier : le champ Adresse vaut simplement 0xFF.</div>
+</section>
+
+<section class="card orange s12" id="p16">
+  <h2>16. Que se passe-t-il chez l'opérateur ?</h2>
+  <div class="three">
+    <div class="box"><h3 style="margin-top:0">Routage IP simple</h3><p>Chaque routeur désencapsule, consulte sa table de routage, décrémente le TTL, puis ré-encapsule dans le format du lien suivant. À l'intérieur : OSPF ou IS-IS. Entre opérateurs : BGP.</p></div>
+    <div class="box"><h3 style="margin-top:0">MPLS</h3><p>Le routeur d'entrée ajoute un label. Les routeurs du cœur lisent seulement le label et le remplacent. Le routeur de sortie le retire.</p></div>
+    <div class="box"><h3 style="margin-top:0">Frame Relay</h3><p>Le DLCI n'a qu'une signification locale : chaque commutateur le remplace selon sa table pour suivre le circuit virtuel.</p></div>
+    <div class="box"><h3 style="margin-top:0">ATM</h3><p>Le paquet est découpé en cellules de 48 octets de données. Chaque commutateur remplace le VPI/VCI, et la destination réassemble.</p></div>
+  </div>
+  <h3>MPLS en image : push, swap, pop</h3>
+  <div class="svgbox"><svg viewBox="0 0 860 210" role="img" aria-label="MPLS push swap pop">
+    <line class="ln" x1="40" y1="80" x2="820" y2="80"/>
+    <rect class="node" x="20" y="55" width="70" height="50" rx="8"/><text x="55" y="85" text-anchor="middle" font-size="13" font-weight="700">CE A</text>
+    <rect class="node" x="160" y="55" width="80" height="50" rx="8"/><text x="200" y="78" text-anchor="middle" font-size="13" font-weight="700">PE 1</text><text x="200" y="95" text-anchor="middle" font-size="11" class="t-muted">entrée</text>
+    <rect class="node" x="340" y="55" width="70" height="50" rx="8"/><text x="375" y="78" text-anchor="middle" font-size="13" font-weight="700">P</text><text x="375" y="95" text-anchor="middle" font-size="11" class="t-muted">cœur</text>
+    <rect class="node" x="500" y="55" width="70" height="50" rx="8"/><text x="535" y="78" text-anchor="middle" font-size="13" font-weight="700">P</text><text x="535" y="95" text-anchor="middle" font-size="11" class="t-muted">cœur</text>
+    <rect class="node" x="640" y="55" width="80" height="50" rx="8"/><text x="680" y="78" text-anchor="middle" font-size="13" font-weight="700">PE 2</text><text x="680" y="95" text-anchor="middle" font-size="11" class="t-muted">sortie</text>
+    <rect class="node" x="770" y="55" width="70" height="50" rx="8"/><text x="805" y="85" text-anchor="middle" font-size="13" font-weight="700">CE B</text>
+    <rect class="tag-l3" x="95" y="120" width="60" height="26" rx="8"/><text x="125" y="138" text-anchor="middle" font-size="12" font-weight="600">IP</text>
+    <rect class="tag-sv" x="245" y="120" width="68" height="26" rx="8"/><text x="279" y="138" text-anchor="middle" font-size="12" font-weight="600">L=17</text>
+    <rect class="tag-l3" x="313" y="120" width="40" height="26" rx="8"/><text x="333" y="138" text-anchor="middle" font-size="12" font-weight="600">IP</text>
+    <rect class="tag-sv" x="418" y="120" width="68" height="26" rx="8"/><text x="452" y="138" text-anchor="middle" font-size="12" font-weight="600">L=42</text>
+    <rect class="tag-l3" x="486" y="120" width="40" height="26" rx="8"/><text x="506" y="138" text-anchor="middle" font-size="12" font-weight="600">IP</text>
+    <rect class="tag-sv" x="575" y="120" width="60" height="26" rx="8"/><text x="605" y="138" text-anchor="middle" font-size="12" font-weight="600">L=8</text>
+    <rect class="tag-l3" x="635" y="120" width="40" height="26" rx="8"/><text x="655" y="138" text-anchor="middle" font-size="12" font-weight="600">IP</text>
+    <rect class="tag-l3" x="725" y="120" width="40" height="26" rx="8"/><text x="745" y="138" text-anchor="middle" font-size="12" font-weight="600">IP</text>
+    <text x="200" y="40" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--sv)">PUSH : ajoute un label</text>
+    <text x="440" y="40" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--sv)">SWAP : remplace le label (17 → 42 → 8)</text>
+    <text x="680" y="40" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--sv)">POP : retire le label</text>
+    <text x="430" y="185" text-anchor="middle" font-size="13" class="t-muted">Les routeurs de cœur regardent le label, pas l'adresse IP. Labels distribués par LDP ou BGP. MPLS ne chiffre rien.</text>
+  </svg></div>
+  <h3>ATM : découper en cellules de 53 octets</h3>
+  <div class="svgbox"><svg viewBox="0 0 860 180" role="img" aria-label="Découpage en cellules ATM">
+    <rect x="20" y="16" width="820" height="40" rx="8" fill="var(--data-bg)" stroke="var(--data)" stroke-width="2"/>
+    <text x="430" y="42" text-anchor="middle" font-size="14" font-weight="700">Données d'origine (un paquet)</text>
+    <path d="M200 60 v20 M430 60 v20 M660 60 v20" stroke="var(--muted)" stroke-width="2" stroke-dasharray="4 4"/>
+    <g font-size="12" font-weight="600">
+      <rect x="40" y="88" width="40" height="36" rx="6" class="tag-l2"/><text x="60" y="110" text-anchor="middle">5 o</text>
+      <rect x="80" y="88" width="230" height="36" rx="6" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.5"/><text x="195" y="110" text-anchor="middle">48 octets de données</text>
+      <rect x="350" y="88" width="40" height="36" rx="6" class="tag-l2"/><text x="370" y="110" text-anchor="middle">5 o</text>
+      <rect x="390" y="88" width="230" height="36" rx="6" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.5"/><text x="505" y="110" text-anchor="middle">48 octets de données</text>
+      <rect x="650" y="88" width="40" height="36" rx="6" class="tag-l2"/><text x="670" y="110" text-anchor="middle">5 o</text>
+      <rect x="690" y="88" width="150" height="36" rx="6" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.5"/><text x="765" y="110" text-anchor="middle">48 o (+ bourrage)</text>
+    </g>
+    <text x="430" y="156" text-anchor="middle" font-size="13" class="t-muted">Chaque cellule : 5 octets d'en-tête (avec VPI/VCI) + 48 octets de charge utile. Taille fixe, donc traitement prévisible.</text>
+  </svg></div>
+</section>
+
+<section class="card teal s12" id="p17">
+  <h2>17. Peut-on utiliser plusieurs protocoles en même temps ?</h2>
+  <p>Oui, quand ils sont de niveaux différents : ils s'empilent. Mais sur un même lien, il n'y a qu'<b>une seule encapsulation de couche 2</b> à la fois.</p>
+  <div class="combo">
+    <div class="box"><h3>PPPoE (accès Internet)</h3><div class="cl l3">IP</div><div class="cl l2">PPP</div><div class="cl l2">Ethernet</div><div class="cl ph">Cuivre ou fibre</div></div>
+    <div class="box"><h3>VPN sur MPLS</h3><div class="cl sv">IPsec (chiffrement)</div><div class="cl l3">IP</div><div class="cl sv">MPLS (labels)</div><div class="cl l2">Ethernet</div><div class="cl ph">Fibre</div></div>
+    <div class="box"><h3>Entreprise moderne</h3><div class="cl sv">IPsec</div><div class="cl l3">IP</div><div class="cl l2">Ethernet</div><div class="cl ph">Fibre</div></div>
+    <div class="box"><h3>Ancien DSL (PPPoA)</h3><div class="cl l3">IP</div><div class="cl l2">PPP</div><div class="cl l2">ATM</div><div class="cl ph">Paire de cuivre DSL</div></div>
+  </div>
+  <div class="tb" style="margin-top:8px"><table>
+    <thead><tr><th>Combinaison</th><th>Possible ?</th><th>Rôle de chaque élément</th></tr></thead>
+    <tbody>
+      <tr><td>Ethernet + IP</td><td>Oui</td><td>Ethernet transporte le paquet IP sur le LAN</td></tr>
+      <tr><td>PPP + IP</td><td>Oui</td><td>PPP transporte le paquet IP sur une liaison point à point</td></tr>
+      <tr><td>Ethernet + PPPoE</td><td>Oui</td><td>Ethernet transporte les trames PPPoE</td></tr>
+      <tr><td>MPLS + Ethernet</td><td>Oui</td><td>Ethernet sert de liaison sous MPLS</td></tr>
+      <tr><td>MPLS + IPsec</td><td>Oui</td><td>MPLS transporte, IPsec protège</td></tr>
+      <tr><td>HDLC + PPP sur la même interface</td><td>Non</td><td>Une seule encapsulation de couche 2 par lien, identique aux deux extrémités</td></tr>
+    </tbody></table></div>
+  <div class="tip w" style="margin-top:8px"><b>À retenir :</b> HDLC et PPP ne peuvent pas coexister sur la même interface série : les deux extrémités doivent utiliser la même encapsulation. Un routeur peut en revanche avoir plusieurs interfaces, chacune avec une encapsulation différente.</div>
+</section>
+
+<section class="card green s12" id="p18">
+  <h2>18. Scénarios d'utilisation</h2>
+
+  <div class="two">
+    <div class="box" style="border-color:var(--ok)"><h3 style="margin-top:0">1. Site-à-site (entre deux réseaux)</h3><div class="flow"><div class="pill g">Site A</div><div class="pill s">Internet</div><div class="pill g">Site B</div></div><p><b>Technologies courantes :</b> IPsec (IKE/ESP), GRE + IPsec, MPLS VPN.</p><p class="foot"><b>Objectif :</b> relier deux réseaux d'entreprise de façon sécurisée.</p></div>
+    <div class="box" style="border-color:var(--l3)"><h3 style="margin-top:0">2. Accès distant (utilisateur nomade)</h3><div class="flow"><div class="pill g">Utilisateur</div><div class="pill s">Internet</div><div class="pill r">VPN</div><div class="pill b">Réseau entreprise</div></div><p><b>Technologies courantes :</b> L2TP/IPsec, SSTP, PPTP (ancien).</p><p class="foot"><b>Objectif :</b> permettre à un utilisateur de se connecter au réseau de l'entreprise de façon sécurisée.</p></div>
+    <div class="box" style="border-color:var(--phys)"><h3 style="margin-top:0">3. Liaison opérateur (inter-sites)</h3><div class="flow"><div class="pill g">Site A</div><div class="pill b">Réseau opérateur<br><small>Frame Relay / ATM / MPLS</small></div><div class="pill g">Site B</div></div><p><b>Technologies courantes :</b> PPP / HDLC, Frame Relay, ATM, MPLS.</p><p class="foot"><b>Objectif :</b> fournir une connectivité entre sites via un opérateur.</p></div>
+    <div class="box" style="border-color:var(--sv)"><h3 style="margin-top:0">4. VPN moderne (sécurisé)</h3><div class="flow"><div class="pill g">Site</div><div class="pill s">Internet</div><div class="pill r">IPsec</div><div class="pill b">Réseau entreprise</div></div><p><b>Technologies courantes :</b> IPsec / IKE / ESP, TLS (SSL/TLS, SSTP), L2TP/IPsec.</p><p class="foot"><b>Objectif :</b> confidentialité, intégrité et authentification des communications.</p></div>
+  </div>
+</section>
+
+<section class="card pink s12" id="p19">
+  <h2>19. Combinaisons courantes de protocoles</h2>
+
+  <div class="two">
+    <div><div class="tb"><table style="min-width:520px"><thead><tr><th>Scénario</th><th>Technologies utilisées</th><th>Pourquoi ?</th></tr></thead><tbody><tr><td>Site-à-site</td><td>IPsec + IKE + ESP · GRE + IPsec · MPLS VPN</td><td>Connexion sécurisée entre sites.</td></tr><tr><td>Accès distant</td><td>L2TP/IPsec · SSTP (TLS) · PPTP (ancien)</td><td>Accès sécurisé aux réseaux de l'entreprise.</td></tr><tr><td>WAN opérateur</td><td>PPP / HDLC / Frame Relay / ATM · MPLS</td><td>Transport sur réseau opérateur.</td></tr><tr><td>VPN moderne</td><td>IPsec / IKE / ESP · TLS (SSTP)</td><td>Chiffrement + authentification.</td></tr><tr><td>Accès Internet</td><td>PPPoE + PPP</td><td>Authentification de l'abonné chez son FAI.</td></tr><tr><td>Réseau privé (entreprise)</td><td>MPLS + VPN</td><td>VPN fourni par un opérateur.</td></tr><tr><td>Connexion multi-sites</td><td>MPLS + IPsec</td><td>Transport + sécurité.</td></tr></tbody></table></div></div>
+    <div><div class="tb"><table style="min-width:360px"><thead><tr><th>Combinaison</th><th>Utilisation / pourquoi ?</th></tr></thead><tbody><tr><td>PPP + LCP + NCP + CHAP</td><td>Liaison PPP authentifiée</td></tr><tr><td>PPPoE + PPP</td><td>PPP sur Ethernet</td></tr><tr><td>L2TP + PPP</td><td>Transporter PPP dans un tunnel</td></tr><tr><td>L2TP + IPsec</td><td>VPN sécurisé</td></tr><tr><td>GRE + IPsec</td><td>Tunnel GRE + chiffrement</td></tr><tr><td>SSTP + PPP + TLS</td><td>VPN basé sur PPP dans TLS</td></tr><tr><td>IPsec + ESP + IKE</td><td>VPN IPsec classique</td></tr><tr><td>MPLS + VPN</td><td>VPN fourni par un opérateur</td></tr><tr><td>Frame Relay + PPP</td><td>Possible (historique)</td></tr></tbody></table></div></div>
+  </div>
+</section>
+
+<section class="card indigo s12" id="p20">
+  <h2>20. Exemples de configuration (simplifiés)</h2>
+
+  <p>Extraits à lire pour comprendre la logique, pas à recopier tels quels sur du matériel réel.</p>
+  <div class="three">
+    <div class="box" style="border-color:var(--old)"><h3 style="margin-top:0">IPsec site-à-site (extrait)</h3><pre class="cmd">crypto isakmp policy 10
+ encr aes 256
+ hash sha256
+ authentication pre-share
+!
+crypto ipsec transform-set TS esp-aes 256 esp-sha256-hmac
+!
+interface Tunnel0
+ ip address 10.10.10.1 255.255.255.252
+ tunnel source 1.1.1.1
+ tunnel destination 2.2.2.2</pre></div>
+    <div class="box" style="border-color:var(--ok)"><h3 style="margin-top:0">L2TP/IPsec (accès distant)</h3><pre class="cmd">! Sur le serveur
+crypto isakmp enable
+crypto ipsec transform-set TS esp-aes 256 esp-sha-hmac
+!
+! Sur le client
+interface Dialer0
+ ip address negotiated
+ encapsulation ppp
+ dialer pool 1
+ ppp authentication chap
+ ppp ipsec</pre></div>
+    <div class="box" style="border-color:var(--phys)"><h3 style="margin-top:0">MPLS (côté opérateur)</h3><pre class="cmd">interface GigabitEthernet0/0/0
+ mpls ip
+ mpls label-protocol ldp
+!
+ip route 10.0.0.0 255.0.0.0 192.168.1.1</pre></div>
+  </div>
+  <div class="tip w"><b>Attention :</b> ces configurations sont des schémas simplifiés. Les commandes exactes dépendent du matériel et de la version du système.</div>
+</section>
+
+<section class="card teal s12" id="c1"><h2>22. Adressage et circuits virtuels (SVC / PVC)</h2><div class="tb"><table><thead><tr><th>Adresse</th><th>Rôle</th><th>Exemple</th></tr></thead><tbody><tr><td>Physique</td><td>Locale à l’équipement : identifie l’interface série ; indispensable aux commutateurs pour choisir le lien de sortie.</td><td>MAC, interface série</td></tr><tr><td>Logique</td><td>Unique, sert au routage de bout en bout ; attribuée par l’opérateur ou un organisme international.</td><td>IP, NVL/DLCI (locaux)</td></tr><tr><td>Symbolique</td><td>Nom mémorisable, apparié à l’adresse logique par le logiciel de connexion.</td><td>www.yahoo.fr ↔ 87.248.120.148</td></tr></tbody></table></div><div class="two"><div class="box"><h3 style="margin-top:0">SVC : circuit virtuel commuté</h3><ul class="l"><li>Créé à la demande, fermé en fin de transmission.</li><li>3 phases : établissement, transfert, libération.</li><li>Pour des échanges <b>sporadiques</b> : plus de signalisation, mais coût réduit.</li></ul></div><div class="box"><h3 style="margin-top:0">PVC : circuit virtuel permanent</h3><ul class="l"><li>Établi en permanence : un seul mode, le transfert de données.</li><li>Pour des échanges <b>constants</b> : pas d’établissement/fermeture, mais coût continu.</li><li>Cas typique de Frame Relay.</li></ul></div></div></section>
+<section class="card blue s12" id="c2"><h2>23. Débits, topologies, trafic et planification</h2><div class="two"><div class="box"><h3 style="margin-top:0">Lignes louées (débits)</h3><div class="tb"><table><thead><tr><th>Ligne</th><th>Débit</th></tr></thead><tbody><tr><td>56 / 64</td><td>56 / 64 kbit/s</td></tr><tr><td>T1 · E1 (J1)</td><td>1,544 · 2,048 Mbit/s</td></tr><tr><td>T3 · E3</td><td>44,736 · 34,064 Mbit/s</td></tr><tr><td>OC-1 · OC-3</td><td>51,84 · 155,54 Mbit/s</td></tr><tr><td>OC-192 · OC-768</td><td>9 953,28 · 39 813,12 Mbit/s</td></tr></tbody></table></div><p style="margin-top:6px"><b>T1/T3</b> : norme américaine ; <b>E1/E3</b> : norme européenne.</p></div><div class="box"><h3 style="margin-top:0">Topologies WAN</h3><ul class="l"><li><b>Maillée complète</b> : résiliente, beaucoup de liaisons.</li><li><b>Maillée partielle</b> : compromis coût/résilience.</li><li><b>Étoile (hub &amp; spoke)</b> : simple, trafic inter-agences via le centre.</li></ul></div></div><div class="two"><div class="box"><h3 style="margin-top:0">Types de trafic (bande passante)</h3><div class="tb"><table><thead><tr><th>Trafic</th><th>Besoin</th></tr></thead><tbody><tr><td>Messagerie, transfert de fichiers, visioconférence</td><td>Haut</td></tr><tr><td>Voix</td><td>Moyen</td></tr><tr><td>Gestion réseau</td><td>Bas</td></tr></tbody></table></div></div><div class="box"><h3 style="margin-top:0">Planifier un WAN (itératif)</h3><ul class="l"><li>1. Localiser les LANs → 2. Analyser le trafic</li><li>3. Planifier la topologie → 4. Les débits</li><li>5. Choisir la technologie → 6. Coût et évaluation</li><li>Itération : 5 → 3 ; révision : 6 → 1.</li></ul></div></div></section>
+<section class="card sky s12" id="c3"><h2>24. Accès WAN : commutation, privé / public, couche physique</h2><div class="two"><div class="box"><h3 style="margin-top:0">Commutation de circuits</h3><ul class="l"><li>Circuit dédié établi <b>avant</b> la communication, capacité fixe (TDM).</li><li>Ex. : RTPC, RNIS.</li></ul></div><div class="box"><h3 style="margin-top:0">Commutation de paquets</h3><ul class="l"><li>Données fractionnées sur un réseau partagé, sans circuit préalable.</li><li>Les commutateurs lisent l’adresse/l’identifiant. Ex. : X.25, Frame Relay, ATM.</li></ul></div></div><div class="tb"><table><thead><tr><th>Famille</th><th>Options</th><th>Points clés</th></tr></thead><tbody><tr><td>Privé dédié</td><td>Lignes louées T1/E1, T3/E3</td><td>Simple, qualité, disponibilité ; coûteux, peu flexible</td></tr><tr><td>Privé commuté</td><td>RNIS BRI : 2B (64) + D (16) = 144 kbit/s · PRI : 23B+D (T1) ou 30B+D (E1)</td><td>Commutation de circuits sur la boucle locale</td></tr><tr><td></td><td>ATM</td><td>Cellules fixes de <b>53 octets</b> : voix, vidéo, données</td></tr><tr><td></td><td>WAN Ethernet (MetroE, EoMPLS, VPLS) · MPLS · VSAT</td><td>Ethernet remplace Frame Relay/ATM ; MPLS : étiquettes ; VSAT : satellite</td></tr><tr><td>Public (Internet)</td><td>DSL, câble, sans fil (Wi-Fi, WiMAX), 3G/4G-LTE, satellite</td><td>Sécurisé par VPN : site à site ou accès distant</td></tr></tbody></table></div><div class="two"><div class="box"><h3 style="margin-top:0">Normes physiques ETTD ↔ ETCD</h3><ul class="l"><li>EIA/TIA-232, EIA/TIA-449/530, EIA/TIA-612/613 (HSSI), V.35, X.21.</li><li><b>CSU</b> : terminaison du signal numérique, surveillance de ligne ; <b>DSU</b> : conversion des trames de ligne T vers le LAN.</li><li>Point de démarcation : séparation de responsabilité client/opérateur.</li></ul></div><div class="box"><h3 style="margin-top:0">Organismes de normalisation</h3><ul class="l"><li>UIT-T (ex-CCITT), ISO, IETF.</li><li>EIA et TIA (<i>Electronic</i> Industries Alliance, Telecommunications Industry Association).</li></ul></div></div><p><b>Questions pour choisir :</b> objectif, étendue, trafic, privé ou public, dédié ou commuté, type de VPN, offres locales, coût.</p></section>
+<section class="card orange s12" id="c4"><h2>25. HDLC en détail</h2><p>Protocole point à point normalisé (CCITT/UIT-T, 1974) ; la trame est délimitée par le fanion <code>01111110</code>, aussi émis entre trames pour garder la synchronisation. <b>Cisco HDLC</b> est une variante propriétaire (non compatible d’un fournisseur à l’autre).</p><p><b>Trame :</b> Fanion · Adresse · Contrôle (8 ou 16 bits) · Informations · FCS (CRC-16, polynôme x<sup>16</sup>+x<sup>12</sup>+x<sup>5</sup>+1) · Fanion. Le <b>bit stuffing</b> insère un 0 après cinq 1 consécutifs.</p><div class="tb"><table><thead><tr><th>Trame</th><th>Rôle</th><th>Commandes</th></tr></thead><tbody><tr><td>I (information)</td><td>Données ; N(S) = trame envoyée, N(R) = prochaine attendue</td><td>—</td></tr><tr><td>S (supervision)</td><td>Acquittement, flux, reprise</td><td>RR (prêt), RNR (saturé), REJ (rejet depuis N(R))</td></tr><tr><td>U (non numérotée)</td><td>Gestion de la liaison</td><td>SABM/SABME, DISC, UA, DM, FRMR</td></tr></tbody></table></div><div class="two"><div class="box"><h3 style="margin-top:0">Fonctionnement</h3><ul class="l"><li><b>Connexion</b> : SABM (P=1) → UA (F=1). <b>Rupture</b> : DISC (P=1) → UA (F=1).</li><li>N(R)=x acquitte les trames jusqu’à x−1 ; acquittement joint aux données (<i>piggy-backing</i>).</li><li>Fenêtre : <b>7</b> (modulo 8, 3 bits) ou <b>127</b> (modulo 128, 7 bits).</li><li><b>T1/RTO</b> : retransmission sans ACK ; <b>T2</b> : délai maximal avant ACK.</li><li>Erreur : trame hors séquence rejetée, REJ N(R)=2, reprise depuis la trame 2.</li><li>Saturation : RNR, puis sondage RR (P=1) ; reprise par RR (F=1).</li></ul></div><div class="box"><h3 style="margin-top:0">Modes</h3><ul class="l"><li><b>NRM</b> : maître/esclave, le secondaire répond après invitation.</li><li><b>ARM</b> : le secondaire émet sans invitation.</li><li><b>ABM</b> : équilibré, chaque extrémité est primaire et secondaire (point à point).</li><li>Limite : HDLC est <b>mono-protocole</b> ; PPP ajoute le champ Protocole.</li></ul></div></div></section>
+<section class="card red s12" id="c5"><h2>26. PPP : trame, identifiants et négociation</h2><div class="tb"><table><thead><tr><th>Champ</th><th>Taille</th><th>Valeur / rôle</th></tr></thead><tbody><tr><td>Drapeau</td><td>1</td><td><code>0x7E</code></td></tr><tr><td>Adresse</td><td>1</td><td><code>0xFF</code> (broadcast, pas d’adresse individuelle)</td></tr><tr><td>Contrôle</td><td>1</td><td><code>0x03</code> (trame UI, sans connexion)</td></tr><tr><td>Protocole</td><td>2</td><td>Identifie le contenu</td></tr><tr><td>Données</td><td>variable</td><td>MTU par défaut 1 500 octets</td></tr><tr><td>FCS</td><td>2 (4 négociable)</td><td>Détection d’erreurs</td></tr></tbody></table></div><div class="two"><div class="box"><h3 style="margin-top:0">Identifiants du champ Protocole</h3><div class="tb"><table><thead><tr><th>Valeur</th><th>Contenu</th></tr></thead><tbody><tr><td>0x0021</td><td>Données IP</td></tr><tr><td>0x8021</td><td>IPCP</td></tr><tr><td>0xC021</td><td>LCP</td></tr><tr><td>0xC023</td><td>PAP</td></tr><tr><td>0xC223</td><td>CHAP</td></tr></tbody></table></div></div><div class="box"><h3 style="margin-top:0">Codes des paquets de contrôle</h3><ul class="l"><li><b>LCP</b> : 1 Configure-Request, 2 Configure-Ack, 5 Terminate-Request, 6 Terminate-Ack, 9 Echo-Request, 10 Echo-Reply.</li><li><b>PAP</b> : 1 Authenticate-Request, 2 Ack, 3 Nak.</li><li><b>CHAP</b> : 1 Challenge, 2 Response, 3 Success, 4 Failure.</li></ul></div></div><p><b>Étapes :</b> 1) LCP établit la liaison (MTU, compression, authentification, multilink) → 2) qualité de liaison (facultatif) → 3) authentification PAP/CHAP → 4) NCP (IPCP pour IP, aussi IPX, AppleTalk) → 5) données → 6) fermeture. PAP : échange en 2 étapes, mot de passe en clair. CHAP : 3 étapes (défi, réponse, accepter/refuser), mot de passe jamais transmis.</p></section>
+<section class="card pink s12" id="c6"><h2>27. Frame Relay en détail</h2><p>Norme CCITT/ANSI, commutation de paquets sur les couches 1-2, circuits virtuels (surtout PVC), encapsulation de type HDLC. <b>Aucune correction d’erreurs</b> : le FCS détecte, la trame erronée est abandonnée, les couches supérieures retransmettent.</p><div class="two"><div class="box"><h3 style="margin-top:0">Notions</h3><ul class="l"><li><b>DLCI</b> : identifiant de PVC, <b>local</b> (10 bits, 1 024 valeurs) : 16-1007 en LMI Cisco, 16-992 en ANSI/Q.933a. Ex. : R1 utilise 102, R2 utilise 201.</li><li><b>CIR</b> : débit garanti ; <b>EIR</b> : excédent non garanti.</li><li><b>LMI</b> : signalisation routeur ↔ commutateur (état des PVC, messages de veille). Types : cisco, ansi, q933a ; trames sur le DLCI 1023 (LMI Cisco).</li><li>Le commutateur traduit (port, DLCI d’entrée) → (port, DLCI de sortie).</li></ul></div><div class="box"><h3 style="margin-top:0">En-tête (2 octets) et congestion</h3><ul class="l"><li>DLCI (6 + 4 bits), C/R, EA (0 = suite, 1 = dernier octet).</li><li><b>FECN</b> : congestion vers la destination ; <b>BECN</b> : vers la source.</li><li><b>DE</b> : trame éligible à l’abandon.</li><li>Données : de 1 à 4 096 octets selon l’implémentation.</li></ul></div></div><p><b>Inverse ARP :</b> après l’échange LMI, le routeur interroge chaque DLCI pour associer IP du saut suivant ↔ DLCI (carte Frame Relay), sinon mappage statique. <b>Sous-interfaces :</b> une seule interface série dessert plusieurs sites (un réseau par sous-interface, ex. s0.1, s0.2, s0.3) au lieu d’une interface par PVC.</p></section>
+<section class="card amber s12" id="c7"><h2>28. Points du cours à corriger ou nuancer</h2><ul class="l"><li>« Fenêtre étendue de 128 » : en modulo 128 on peut avoir <b>127</b> trames non acquittées au maximum.</li><li>EIA = <i>Electronic</i> Industries Alliance (le cours écrit « Appliance »).</li><li>Le chapitre Frame Relay s’intitule « Vue d’ensemble de PPP » par erreur.</li><li>Le bit C/R de Frame Relay n’est pas strictement équivalent au P/F de HDLC.</li><li>Frame Relay, ATM, RNIS, WiMAX sont aujourd’hui historiques ou en recul : à connaître pour les principes, plus que pour le déploiement.</li></ul></section>
+<section class="card indigo s12" id="p21">
+  <h2>21. Révision rapide : clique sur une carte</h2>
+  <div class="qa" id="qa"></div>
+  <div class="tip" style="margin-top:10px"><b>Ordre de révision conseillé pour tes exercices Cisco :</b> Ethernet, adresses MAC, routage IP, HDLC, PPP, IPsec. Ensuite Frame Relay et ATM (pour comprendre l'historique), puis MPLS (réseaux d'opérateurs modernes).</div>
+</section>
+</main>
+
+<footer class="retenir">
+  <h2>Points clés à retenir</h2>
+  <div class="cols">
+    <ul><li><b>PPP</b> est la base de nombreuses technologies (LCP, NCP, PAP/CHAP, PPPoE, L2TP, SSTP).</li><li>Un <b>tunnel</b> ne chiffre pas forcément.</li><li><b>IPsec</b> apporte le chiffrement et l'authentification (ESP/AH + IKE).</li></ul>
+    <ul><li><b>MPLS</b> est une technologie opérateur (labels).</li><li>Les technologies peuvent s'empiler et se combiner.</li><li>Le choix dépend du besoin : site-à-site, accès distant, performance, sécurité, coût.</li></ul>
+    <ul><li>Le <b>câble ou la fibre</b> transporte les signaux ; la <b>couche 2</b> encadre les données sur un lien ; la <b>couche 3</b> assure le routage IP.</li><li>GRE = tunnel, IPsec = sécurité.</li><li>IPsec ≠ PPP : couche 3 contre couche 2.</li></ul>
+  </div>
+  <h3 style="font-family:var(--f-head);font-weight:400;font-size:1.3rem;margin:12px 0 6px">En résumé</h3>
+  <div class="flow" style="color:#1b2a41">
+    <div class="pill v">Liaison<br><small>PPP / HDLC / Ethernet / Frame Relay / ATM</small></div><div class="pill g">Tunnel<br><small>GRE / L2TP / PPTP / SSTP</small></div><div class="pill s">Sécurité<br><small>IPsec / TLS</small></div><div class="pill r" style="background:#fde6c6;border-color:#ee8f2d;color:#7a4300">Réseau opérateur<br><small>MPLS</small></div><div class="pill b">Application<br><small>HTTP / HTTPS / DNS</small></div>
+  </div>
+  <div class="courage">Les protocoles ne sont pas des concurrents, ils se complètent !</div>
+</footer>
+</div>
+
+<script>
+/* ===== mini flow diagrams ===== */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function wrap(t){var w=t.split(' ');if(w.length<2)return [t];var m=Math.ceil(w.length/2);return [w.slice(0,m).join(' '),w.slice(m).join(' ')]}
+document.querySelectorAll('.mini[data-items]').forEach(function(el){
+  var items=el.dataset.items.split('|'),n=items.length,W=120*n,h='<svg viewBox="0 0 '+W+' 100" role="img" aria-label="'+esc(items.join(', ').replace(/~/g,''))+'">';
+  var dashFrom=el.dataset.dash!==undefined?+el.dataset.dash:-1;
+  for(var i=0;i<n-1;i++){
+    var x1=60+120*i+(items[i][0]==='~'?42:36),x2=60+120*(i+1)-(items[i+1][0]==='~'?42:36);
+    h+='<line class="ln" x1="'+x1+'" y1="46" x2="'+x2+'" y2="46"'+(i>=dashFrom&&dashFrom>=0&&i===dashFrom?' stroke-dasharray="6 5"':'')+'/>';
+  }
+  items.forEach(function(it,i){
+    var cx=60+120*i,cloud=it[0]==='~',t=cloud?it.slice(1):it,lines=wrap(t);
+    if(cloud)h+='<ellipse class="cloud" cx="'+cx+'" cy="46" rx="44" ry="30"/>';
+    else h+='<rect class="node" x="'+(cx-36)+'" y="26" width="72" height="40" rx="8"/>';
+    lines.forEach(function(l,k){h+='<text x="'+cx+'" y="'+(lines.length===1?50:(k?56:42))+'" text-anchor="middle" font-size="11.5" font-weight="700">'+esc(l)+'</text>'});
+  });
+  if(el.dataset.label){h+='<text x="'+(W/2)+'" y="90" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--l2)">'+esc(el.dataset.label)+'</text>'}
+  h+='</svg>';el.innerHTML=h;
+});
+
+/* ===== Tableau ===== */
+var ROWS=[
+ {n:"Ethernet",l:"1 + 2",lc:"lt-2",s:"Cuivre UTP Cat5e/6 (100 m max), fibre multimode ou monomode",c:"Multi-accès, trames variables, adresses MAC",u:"LAN, interconnexion de sites (Ethernet WAN / Metro Ethernet)",st:"Standard actuel",k:"ok"},
+ {n:"HDLC",l:"2",lc:"lt-2",s:"Liaison série (V.35, RS-232, X.21), ligne T1/E1 via CSU/DSU",c:"Point à point, trames de taille variable",u:"Relier directement deux routeurs en série ; labs Cisco",st:"Résiduel",k:"warn"},
+ {n:"PPP",l:"2",lc:"lt-2",s:"Liaison série, téléphone, DSL, ou Ethernet via PPPoE",c:"Point à point avec négociation et authentification",u:"Liaison entre deux équipements, accès Internet",st:"Encore utilisé",k:"ok"},
+ {n:"PPPoE",l:"2 (PPP dans Ethernet)",lc:"lt-2",s:"Cuivre Ethernet ou fibre",c:"Session logique point à point sur Ethernet",u:"Accès Internet d'un abonné chez son FAI",st:"Encore utilisé",k:"ok"},
+ {n:"Frame Relay",l:"2",lc:"lt-2",s:"Ligne T1/E1 ou série V.35 vers l'opérateur",c:"Circuits virtuels (PVC/SVC), trames avec DLCI",u:"Ancien WAN d'entreprise loué à l'opérateur",st:"Historique",k:"old"},
+ {n:"ATM",l:"2 (avec AAL)",lc:"lt-2",s:"Fibre SONET/SDH, T1/E1, paire cuivre DSL",c:"Circuits virtuels, cellules de 53 octets (VPI/VCI)",u:"Anciens cœurs télécoms, voix + vidéo + données",st:"Historique / résiduel",k:"old"},
+ {n:"MPLS",l:"2,5 (entre 2 et 3)",lc:"lt-m",s:"Tout support : fibre en cœur, Ethernet...",c:"Commutation de labels chez l'opérateur",u:"Backbone des opérateurs, VPN inter-sites, QoS",st:"Très utilisé",k:"ok"},
+ {n:"IPsec",l:"3 (sécurité)",lc:"lt-3",s:"Aucun câble propre : tout lien IP",c:"Tunnel chiffré entre deux passerelles",u:"VPN site à site, accès distant sécurisé",st:"Très utilisé",k:"ok"}
+];
+var tb=document.getElementById('tbody');
+function renderRows(f){
+  tb.innerHTML='';
+  ROWS.forEach(function(r){
+    if(f==='actif'&&r.k!=='ok')return;
+    if(f==='old'&&r.k==='ok')return;
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+r.n+'</td><td><span class="lt '+r.lc+'">'+r.l+'</span></td><td>'+r.s+'</td><td>'+r.c+'</td><td>'+r.u+'</td><td><span class="badge b-'+r.k+'">'+r.st+'</span></td>';
+    tb.appendChild(tr);
+  });
+}
+renderRows('all');
+document.querySelectorAll('.chip[data-f]').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.chip[data-f]').forEach(function(x){x.setAttribute('aria-pressed','false')});
+    b.setAttribute('aria-pressed','true');renderRows(b.dataset.f);
+  });
+});
+
+/* ===== Fiches ===== */
+function F(t,sub,cls,grow){return {t:t,s:sub,c:cls||'l2',g:grow}}
+var PROTO=[
+{id:"ethernet",name:"Ethernet",tag:"La technologie universelle du LAN, de plus en plus présente en WAN.",
+ layer:"1 + 2",cable:"Cuivre UTP Cat5e/6 (100 m max), fibre multimode (courte distance) ou monomode (longue distance)",
+ comm:"Multi-accès, trames de taille variable, adresses MAC",who:"PC ↔ switch, switch ↔ routeur, client ↔ opérateur (Ethernet WAN)",status:"Standard actuel",sk:"ok",
+ frame:[F("MAC destination","6 o"),F("MAC source","6 o"),F("EtherType","2 o"),F("Données (paquet IP)","46 à 1500 o","l3",1),F("FCS","4 o")],
+ how:["Une adresse MAC identifie chaque interface sur le segment local.","Le switch lit la MAC destination pour envoyer la trame au bon port.","Pour joindre une IP d'un autre réseau, l'hôte vise la MAC de sa passerelle, trouvée par ARP.","Le FCS détecte les erreurs de transmission."],
+ best:"Partout : LAN, interconnexion de sites avec un service Ethernet opérateur. Ethernet WAN ne veut pas forcément dire fibre dédiée : le service peut reposer sur une infrastructure partagée.",
+ exam:"Adresses MAC + EtherType + FCS."},
+{id:"hdlc",name:"HDLC",tag:"Encapsulation simple par trames sur une liaison série point à point.",
+ layer:"2 (sur une liaison série en couche 1)",cable:"Câble série V.35, RS-232 ou X.21 ; en production, ligne T1/E1 via CSU/DSU",
+ comm:"Point à point, trames de taille variable",who:"Routeur ↔ routeur (liaison série directe)",status:"Résiduel",sk:"warn",
+ frame:[F("Flag","0x7E"),F("Address","0x0F unicast / 0x8F broadcast"),F("Control"),F("Type","Champ propriétaire Cisco","sv"),F("Données (paquet IP)","","l3",1),F("FCS"),F("Flag")],
+ how:["Le routeur retire l'en-tête Ethernet du LAN et encapsule le paquet IP dans une trame HDLC.","Pas d'adresse MAC : une seule destination possible sur la liaison.","Le champ Type est propre à Cisco : cette variante est incompatible avec d'autres constructeurs.","HDLC de base n'a ni négociation ni authentification."],
+ best:"Labs Cisco et anciennes liaisons dédiées entre deux routeurs.",
+ cmd:"interface Serial0/0/0\n encapsulation hdlc",
+ exam:"Protocole d'encapsulation par trames sur liaison série. Variante Cisco propriétaire."},
+{id:"ppp",name:"PPP",tag:"Liaison point à point avec négociation et authentification en plus.",
+ layer:"2",cable:"Liaisons série, ligne téléphonique, DSL, ou Ethernet (PPPoE)",
+ comm:"Point à point, trames avec négociation (LCP, NCP)",who:"Routeur ↔ routeur (série), abonné ↔ FAI (PPPoE)",status:"Encore utilisé",sk:"ok",
+ frame:[F("Flag","0x7E"),F("Address","0xFF"),F("Control","0x03"),F("Protocol","0x0021 = IPv4","sv"),F("Données (paquet IP)","","l3",1),F("FCS"),F("Flag")],
+ phases:[["1. LCP","Établit, configure et teste la liaison",0],["2. Authentification","PAP ou CHAP (CHAP est plus sûr : le mot de passe ne circule pas en clair)",1],["3. NCP","Configure le protocole de couche 3 (IPCP pour IP)",0],["4. Données","Les paquets circulent dans des trames PPP",0]],
+ how:["Le champ Protocol dit ce qu'il y a dedans : 0x0021 = IPv4, 0xC021 = LCP, 0x8021 = IPCP, 0xC023 = PAP, 0xC223 = CHAP.","Comme HDLC, aucune adresse MAC : l'Address vaut toujours 0xFF.","Contrairement à HDLC de base, PPP négocie la liaison (LCP) et configure les protocoles réseau (NCP).","Avec PPPoE, la session PPP est transportée dans des trames Ethernet : c'est ainsi que se fait l'accès Internet DSL ou fibre chez beaucoup de FAI."],
+ best:"Liaison point à point avec authentification, et accès Internet via PPPoE. Compatible avec des équipements de constructeurs différents.",
+ cmd:"interface Serial0/0/0\n encapsulation ppp\n ppp authentication chap",
+ exam:"Point-to-Point Protocol : LCP, NCP, PAP/CHAP, champ Protocol."},
+{id:"fr",name:"Frame Relay",tag:"Ancien service WAN d'opérateur à circuits virtuels.",
+ layer:"2",cable:"Ligne T1/E1 ou liaison série V.35 vers le réseau de l'opérateur",
+ comm:"Multipoint via circuits virtuels PVC (permanents) et SVC (à la demande)",who:"Client ↔ opérateur, pour relier plusieurs agences",status:"Historique",sk:"old",
+ frame:[F("Flag"),F("DLCI + FECN/BECN/DE","Identifie le circuit virtuel","sv"),F("Données (paquet IP)","","l3",1),F("FCS"),F("Flag")],
+ how:["L'opérateur établit des circuits virtuels entre les sites du client.","Le DLCI identifie le circuit : il a une signification locale et est remplacé par chaque commutateur.","FECN et BECN signalent la congestion ; DE marque les trames éliminables en priorité.","Un seul accès physique peut porter plusieurs circuits vers plusieurs agences."],
+ best:"Autrefois : relier plusieurs agences à moindre coût. Aujourd'hui : comprendre l'historique et les anciennes configurations.",
+ exam:"Trames + DLCI + circuits virtuels."},
+{id:"atm",name:"ATM",tag:"Cellules de 53 octets, toutes de la même taille.",
+ layer:"2 (avec les couches d'adaptation AAL)",cable:"Fibre SONET/SDH (ex. OC-3 : 155 Mbit/s), T1/E1, paire cuivre DSL",
+ comm:"Circuits virtuels, cellules fixes de 53 octets",who:"Opérateur ↔ opérateur, opérateur ↔ client en DSL",status:"Historique / résiduel",sk:"old",
+ frame:[F("En-tête","5 octets, avec VPI/VCI","sv"),F("Charge utile","48 octets","data",1)],
+ how:["Les données sont découpées en morceaux de 48 octets.","Chaque morceau reçoit un en-tête de 5 octets : une cellule de 53 octets.","Les commutateurs utilisent VPI et VCI pour acheminer et remplacer l'identifiant de circuit.","À destination, les cellules sont réassemblées. La taille fixe facilite la voix et la vidéo."],
+ best:"Anciens cœurs télécoms mêlant voix, vidéo et données. Subsiste dans d'anciens accès DSL.",
+ exam:"Cellules fixes de 53 octets (5 + 48)."},
+{id:"mpls",name:"MPLS",tag:"Commutation de labels dans le réseau de l'opérateur.",
+ layer:"« 2,5 » : entre la couche 2 et la couche 3",cable:"Tout support : fibre en cœur de réseau, Ethernet, PPP...",
+ comm:"Transport de paquets par labels",who:"Opérateur ↔ opérateur (cœur), service VPN vendu aux clients",status:"Très utilisé",sk:"ok",
+ frame:[F("En-tête de liaison","Ethernet, PPP...","l2"),F("Label MPLS","20 bits + TC + S + TTL","sv"),F("Paquet IP","","l3",1)],
+ how:["Le routeur d'entrée (PE) ajoute un label (push).","Les routeurs de cœur (P) lisent seulement le label et le remplacent (swap), sans consulter l'IP.","Le routeur de sortie retire le label (pop).","Les labels sont distribués par LDP ou BGP."],
+ best:"Backbone des opérateurs, VPN MPLS inter-sites, qualité de service. MPLS n'est pas un câble, et il ne chiffre pas automatiquement les données.",
+ exam:"Labels, réseau opérateur, push/swap/pop."},
+{id:"ipsec",name:"IPsec",tag:"Protège les paquets IP par chiffrement, sur n'importe quel lien.",
+ layer:"3 (et non 2)",cable:"Aucun câble propre : fonctionne sur tout lien IP (Ethernet, fibre, Wi-Fi...)",
+ comm:"Tunnel chiffré entre deux passerelles",who:"Routeur ou pare-feu ↔ routeur ou pare-feu, via Internet",status:"Très utilisé",sk:"ok",
+ frame:[F("En-tête IP externe","R1 → R2","l3"),F("En-tête ESP","","sv"),F("Paquet IP d'origine + données","chiffrés","l3",1),F("Fin ESP + authentification","","sv")],
+ how:["En mode tunnel, le paquet d'origine est chiffré par ESP et placé derrière un nouvel en-tête IP.","Les routeurs intermédiaires ne voient que l'en-tête externe.","Le routeur de destination vérifie et déchiffre, puis retrouve le paquet d'origine.","IKE négocie les clés et les paramètres (phases 1 et 2). La protection dépend de la configuration choisie."],
+ best:"Sécuriser les échanges entre réseaux distants en utilisant Internet comme réseau de transport. À la différence de HDLC ou d'ATM, IPsec apporte une protection cryptographique.",
+ exam:"VPN, ESP, AH, IKE, tunnel, chiffrement."}
+];
+var tabs=document.getElementById('tabs'),panel=document.getElementById('panel');
+PROTO.forEach(function(p,i){
+  var b=document.createElement('button');b.className='ptab';b.setAttribute('role','tab');b.textContent=p.name;b.id='tab-'+p.id;
+  b.addEventListener('click',function(){showProto(i)});
+  b.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight')showProto((i+1)%PROTO.length,true);
+    if(e.key==='ArrowLeft')showProto((i+PROTO.length-1)%PROTO.length,true);
+  });
+  tabs.appendChild(b);
+});
+function showProto(i,focus){
+  var p=PROTO[i];
+  Array.prototype.forEach.call(tabs.children,function(t,k){t.setAttribute('aria-selected',k===i?'true':'false');t.tabIndex=k===i?0:-1});
+  if(focus)tabs.children[i].focus();
+  var h='<h3 class="big">'+p.name+'</h3><p>'+p.tag+'</p>';
+  h+='<div class="meta"><div><b>Couche</b>'+p.layer+'</div><div><b>Câble / support</b>'+p.cable+'</div><div><b>Type de communication</b>'+p.comm+'</div><div><b>Utilisé entre</b>'+p.who+'</div><div><b>Aujourd\'hui</b><span class="badge b-'+p.sk+'">'+p.status+'</span></div></div>';
+  h+='<h3>Structure de la trame</h3><div class="frame">';
+  p.frame.forEach(function(f){h+='<div class="fb '+f.c+(f.g?' grow':'')+'"><b>'+esc(f.t)+'</b>'+(f.s?'<small>'+esc(f.s)+'</small>':'')+'</div>'});
+  h+='</div>';
+  if(p.phases){
+    h+='<h3>Les phases d\'une session PPP</h3><div class="phases">';
+    p.phases.forEach(function(ph){h+='<div class="phase'+(ph[2]?' opt':'')+'"><b>'+ph[0]+(ph[2]?' (optionnelle)':'')+'</b>'+ph[1]+'</div>'});
+    h+='</div>';
+  }
+  h+='<h3>Comment ça fonctionne</h3><ul class="l">';
+  p.how.forEach(function(x){h+='<li>'+x+'</li>'});
+  h+='</ul><h3>Meilleure utilisation</h3><p>'+p.best+'</p>';
+  if(p.cmd)h+='<h3>Exemple Cisco</h3><pre class="cmd">'+esc(p.cmd)+'</pre>';
+  h+='<div class="tip"><b>Mot-clé d\'examen :</b> '+p.exam+'</div>';
+  panel.innerHTML=h;
+  panel.setAttribute('aria-labelledby','tab-'+p.id);
+}
+showProto(2);
+
+/* ===== Parcours ===== */
+var mode='ppp',step=0;
+var XS=[50,225,265,400,575,615,750];
+var AA='AA:AA:AA:AA:AA:AA',RA='RA:RA:RA:RA:RA:RA',RB='RB:RB:RB:RB:RB:RB',BB='BB:BB:BB:BB:BB:BB';
+function blk(t,s,c,g,enc){return '<div class="fb '+c+(g?' grow':'')+(enc?' enc':'')+'"><b>'+t+'</b>'+(s?'<small>'+s+'</small>':'')+'</div>'}
+function ip(ttl){return blk('En-tête IP','192.168.1.10 → 192.168.2.20<br>TTL '+ttl,'l3')}
+var DATA=blk('Données','TCP/UDP + application','data',1);
+function ethFrame(dst,src,ttl){return blk('Ethernet','dst '+dst+'<br>src '+src,'l2')+ip(ttl)+DATA+blk('FCS','','l2')}
+function steps(){
+  var M=mode,S=[];
+  S.push({t:'PC A construit le paquet',d:'PC A veut joindre 192.168.2.20, dans un autre réseau : il envoie donc à sa passerelle, R1. Il crée un paquet IP, trouve la MAC de R1 grâce à <b>ARP</b>, puis encapsule le paquet dans une trame Ethernet. La MAC destination est celle de R1, pas celle de PC B.',f:ethFrame(RA,AA,64),a:[['Couche 3','IP 192.168.1.10 → 192.168.2.20'],['Couche 2','MAC AA → RA (Ethernet)']]});
+  S.push({t:'R1 reçoit la trame et désencapsule',d:'R1 vérifie le FCS, retire l\'en-tête et la fin de trame Ethernet, et récupère le paquet IP. Il lit l\'IP destination et consulte sa <b>table de routage</b> : le réseau 192.168.2.0/24 est joignable par son interface WAN. Il décrémente le TTL.',f:ip(63)+DATA,a:[['Ce qui a disparu','L\'en-tête Ethernet du LAN A'],['Décision','Route vers 192.168.2.0/24 via l\'interface WAN']]});
+  var f3,d3,a3;
+  if(M==='ppp'){f3=blk('Flag','0x7E','l2')+blk('Address','0xFF','l2')+blk('Control','0x03','l2')+blk('Protocol','0x0021 (IPv4)','sv')+ip(63)+DATA+blk('FCS','','l2');
+    d3='R1 encapsule le <b>même paquet IP</b> dans une <b>trame PPP</b>. Ni MAC ni ARP : le seul voisin possible est à l\'autre bout. La liaison a été préparée avant : LCP, authentification éventuelle (PAP/CHAP), puis IPCP.';
+    a3=[['Couche 2','Trame PPP, Protocol = 0x0021'],['Adresses MAC','Aucune']];}
+  else if(M==='eth'){f3=ethFrame('MAC du saut suivant','MAC interface WAN R1',63);
+    d3='Le WAN utilise Ethernet. R1 construit une <b>nouvelle trame Ethernet</b> adaptée au prochain saut : l\'en-tête est différent de celui du LAN A.';
+    a3=[['Couche 2','Nouvelle trame Ethernet'],['Adresses MAC','MAC de R1 (WAN) → MAC du routeur suivant']];}
+  else if(M==='mpls'){f3=blk('En-tête de liaison','Ethernet ou PPP vers le PE','l2')+ip(63)+DATA+blk('FCS','','l2');
+    d3='R1 est le routeur du client. Il envoie une trame normale (Ethernet ou PPP) vers le routeur d\'entrée de l\'opérateur (PE). Le <b>label MPLS n\'est pas encore ajouté</b> : c\'est le PE qui le fera.';
+    a3=[['Couche 2','Trame normale vers le PE'],['MPLS','Pas encore de label']];}
+  else{f3=blk('En-tête de liaison','','l2')+blk('IP externe','R1 → R2<br>(passerelles VPN)','l3')+blk('ESP','','sv')+blk('Paquet IP d\'origine + données','<b>chiffrés</b>','l3',1,true)+blk('Fin ESP + auth.','','sv');
+    d3='R1 est la passerelle VPN. Il <b>chiffre le paquet d\'origine avec ESP</b> et ajoute un <b>nouvel en-tête IP</b> (R1 → R2). Le paquet interne devient illisible pour les routeurs intermédiaires.';
+    a3=[['IP externe','R1 → R2'],['Protégé','Paquet interne chiffré et authentifié']];}
+  S.push({t:'R1 encapsule pour le WAN',d:d3,f:f3,a:a3});
+  var f4,d4,a4;
+  if(M==='ppp'||M==='eth'){f4=blk('En-tête de liaison','change à chaque lien','l2')+ip('↓')+DATA+blk('FCS','recalculé','l2');
+    d4='Chaque routeur du réseau opérateur <b>désencapsule, consulte sa table de routage</b> (OSPF ou IS-IS en interne, BGP entre opérateurs), <b>décrémente le TTL</b> et ré-encapsule dans le format du lien suivant.';
+    a4=[['Routage','OSPF / IS-IS / BGP'],['À chaque saut','Nouvelle trame, TTL − 1, FCS recalculé']];}
+  else if(M==='mpls'){f4=blk('En-tête de liaison','','l2')+blk('Label MPLS','PUSH, puis SWAP','sv')+ip('inchangé')+DATA;
+    d4='Le PE <b>ajoute un label (push)</b>. Les routeurs de cœur <b>lisent seulement le label et le remplacent (swap)</b>, sans consulter l\'IP. Le routeur de sortie <b>retire le label (pop)</b>. LDP ou BGP distribuent les labels. MPLS ne chiffre pas.';
+    a4=[['Décision de transfert','Basée sur le label, pas sur l\'IP'],['Protocoles','LDP / BGP']];}
+  else{f4=blk('En-tête de liaison','','l2')+blk('IP externe','R1 → R2','l3')+blk('ESP + contenu chiffré','illisible','sv',1,true);
+    d4='Les routeurs de l\'opérateur <b>ne voient que l\'en-tête IP externe</b> (R1 → R2) et routent normalement. Le contenu d\'origine, adresses internes comprises, reste protégé.';
+    a4=[['Visible','En-tête IP externe'],['Caché','Paquet interne']];}
+  S.push({t:'Traversée du réseau opérateur',d:d4,f:f4,a:a4});
+  var d5,f5=ip('↓')+DATA,a5;
+  if(M==='ipsec'){d5='R2 vérifie l\'authenticité, <b>déchiffre</b> avec ESP, retire l\'en-tête externe et retrouve le paquet IP d\'origine. Il consulte sa table de routage : 192.168.2.0/24 est directement connecté sur son interface LAN.';a5=[['Traitement','Vérification + déchiffrement IPsec'],['Routage','Réseau directement connecté']];}
+  else if(M==='mpls'){d5='Les labels ont déjà été retirés par le routeur de sortie de l\'opérateur. R2 reçoit une trame normale, la désencapsule, récupère le paquet IP et consulte sa table de routage.';a5=[['MPLS','Labels déjà retirés (pop)'],['Routage','Réseau directement connecté']];}
+  else{d5='R2 reçoit la trame '+(M==='ppp'?'PPP':'Ethernet')+', vérifie le FCS, <b>retire l\'en-tête</b> et récupère le paquet IP. Il consulte sa table de routage : 192.168.2.0/24 est directement connecté sur son interface LAN. Il décrémente le TTL.';a5=[['Désencapsulation',M==='ppp'?'Retrait de l\'en-tête PPP':'Retrait de l\'en-tête Ethernet'],['Routage','Réseau directement connecté']];}
+  S.push({t:'R2 reçoit et désencapsule',d:d5,f:f5,a:a5});
+  S.push({t:'R2 envoie vers le LAN B',d:'R2 sait que 192.168.2.20 est sur son LAN. Il trouve la MAC de PC B dans sa <b>table ARP</b> (ou lance une requête ARP) et construit une <b>nouvelle trame Ethernet</b>. Le paquet IP est identique, seul le TTL a diminué.',f:blk('Ethernet','dst '+BB+'<br>src '+RB,'l2')+ip('réduit')+DATA+blk('FCS','','l2'),a:[['Couche 2','MAC RB → BB (Ethernet)'],['Couche 3','Mêmes adresses IP qu\'au départ']]});
+  S.push({t:'PC B reçoit les données',d:'PC B vérifie que la MAC destination est la sienne, retire l\'en-tête Ethernet (couche 2), vérifie que l\'IP destination est la sienne (couche 3), puis remet les données à TCP ou UDP, puis à l\'application.',f:blk('Données','remises à TCP/UDP puis à l\'application','data',1),a:[['Couche 2','Trame acceptée, en-tête retiré'],['Couche 3','IP destination = 192.168.2.20']]});
+  return S;
+}
+var stepperEl=document.getElementById('stepper'),explain=document.getElementById('explain'),marker=document.getElementById('marker'),mk=document.getElementById('mk');
+function renderJourney(){
+  var S=steps(),s=S[step];
+  stepperEl.innerHTML='';
+  S.forEach(function(x,i){
+    var b=document.createElement('button');b.textContent=i+1;b.setAttribute('aria-label','Étape '+(i+1)+' : '+x.t);
+    if(i===step)b.setAttribute('aria-current','step');else if(i<step)b.className='done';
+    b.addEventListener('click',function(){step=i;renderJourney()});
+    stepperEl.appendChild(b);
+  });
+  var h='<h3 style="margin-top:0">Étape '+(step+1)+' : '+s.t+'</h3><p>'+s.d+'</p><b>Contenu de la trame à cet instant</b><div class="frame">'+s.f+'</div><div class="addr">';
+  s.a.forEach(function(a){h+='<div><b>'+a[0]+'</b>'+a[1]+'</div>'});
+  h+='</div>';
+  explain.innerHTML=h;
+  marker.setAttribute('transform','translate('+XS[step]+',40)');
+  mk.textContent=step+1;
+  document.getElementById('prev').disabled=step===0;
+  document.getElementById('next').disabled=step===S.length-1;
+}
+document.getElementById('prev').addEventListener('click',function(){if(step>0){step--;renderJourney()}});
+document.getElementById('next').addEventListener('click',function(){if(step<6){step++;renderJourney()}});
+document.querySelectorAll('.chip[data-m]').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.chip[data-m]').forEach(function(x){x.setAttribute('aria-pressed','false')});
+    b.setAttribute('aria-pressed','true');mode=b.dataset.m;renderJourney();
+  });
+});
+renderJourney();
+
+/* ===== Révision ===== */
+var QA=[
+ ["Quelle technologie utilise des cellules de taille fixe ?","ATM : cellules de 53 octets (5 d'en-tête + 48 de données)."],
+ ["Quelle technologie utilise le DLCI pour identifier un circuit virtuel ?","Frame Relay."],
+ ["Quel protocole de liaison de données est souvent utilisé sur les liaisons série entre routeurs ?","HDLC (et PPP)."],
+ ["Quelle différence clé entre PPP et HDLC ?","PPP ajoute la négociation (LCP), la configuration des protocoles réseau (NCP) et l'authentification (PAP/CHAP)."],
+ ["Pourquoi pas d'adresse MAC sur une liaison PPP ?","Liaison point à point : un seul voisin possible, le champ Address vaut 0xFF."],
+ ["Que change-t-on à chaque saut, et que garde-t-on de bout en bout ?","Les en-têtes de couche 2 et les MAC changent à chaque lien. Les adresses IP restent identiques (sans NAT)."],
+ ["MPLS chiffre-t-il les données ?","Non. MPLS transporte par labels. Pour chiffrer, on ajoute IPsec."],
+ ["Un tunnel est-il la même chose qu'un chiffrement ?","Non. Un tunnel crée un chemin logique (ex : GRE) ; le chiffrement rend les données illisibles (ex : ESP)."],
+ ["Quel protocole négocie les paramètres IPsec ?","IKE (phases 1 et 2)."],
+ ["Peut-on avoir HDLC et PPP sur la même interface série ?","Non : une seule encapsulation de couche 2 par lien, identique aux deux extrémités."],
+ ["Sur quelles couches OSI fonctionnent principalement les WAN ?","Sur les 3 couches inférieures : physique, liaison de données, réseau (1, 2, 3)."],
+ ["Que marque le point de démarcation ?","Le point où la responsabilité passe du client au fournisseur de services."]
+ ,["Quelle est la différence entre encapsulation, tunnel et chiffrement ?","Encapsulation : placer un protocole dans un autre. Tunnel : créer un chemin logique entre deux extrémités. Chiffrement : rendre les données illisibles."],
+ ["GRE chiffre-t-il les données ?","Non. GRE crée un tunnel, sans chiffrement. On l'associe souvent à IPsec."],
+ ["Dans quelle couche se trouve IPsec ? Et PPP ?","IPsec : couche 3 (réseau). PPP : couche 2 (liaison)."],
+ ["Que fait LCP ?","Il établit, configure, teste et termine la liaison PPP, et négocie certains paramètres."],
+ ["Quelle est la différence entre PAP et CHAP ?","PAP envoie nom et mot de passe sans protection moderne. CHAP utilise un challenge : plus sécurisé."],
+ ["PAP, CHAP et EAP sont-ils des versions de PPP ?","Non. Ils font partie de l'écosystème PPP, comme moyens d'authentification."],
+ ["Quels sont les 5 blocs d'IPsec ?","Protocole IPsec (AH/ESP), confidentialité, intégrité, clé secrète partagée, Diffie-Hellman."],
+ ["Que garantit ESP ?","Confidentialité (chiffrement), intégrité et protection contre le rejeu."],
+ ["Quel est le rôle d'IKE ?","Négocier les algorithmes, échanger les clés et créer les SA (Security Associations) d'IPsec."],
+ ["Différence entre PPTP et L2TP ?","Tous deux de niveau 2 (tunnel PPP). PPTP est ancien et peu sécurisé ; L2TP est plus sûr, souvent avec IPsec."],
+ ["Sur quel port fonctionne SSTP ?","Port 443 : PPP dans un tunnel TLS."],
+ ["Service sans connexion ou orienté connexion : quelle différence ?","Sans connexion : chaque paquet est indépendant (Internet). Orienté connexion : circuit virtuel avec ordre garanti (ex : X.25)."]
+];
+var qa=document.getElementById('qa');
+QA.forEach(function(x){
+  var b=document.createElement('button');b.setAttribute('aria-expanded','false');
+  b.innerHTML='<div class="q">'+x[0]+'</div><div class="a">'+x[1]+'</div>';
+  b.addEventListener('click',function(){b.setAttribute('aria-expanded',b.getAttribute('aria-expanded')==='true'?'false':'true')});
+  qa.appendChild(b);
+});
+</script>
+</body>
+</html>
